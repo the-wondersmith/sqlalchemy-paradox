@@ -1,6 +1,6 @@
 from sqlalchemy.dialects import registry as _registry
 
-from .base import dfChar, dfDate, dfInt, dfDecimal
+from .base import ParadoxDialect
 
 import pyodbc
 
