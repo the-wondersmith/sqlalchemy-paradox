@@ -30,7 +30,7 @@ setup(
         "Topic :: Database :: Front-Ends",
         "Operating System :: OS Independent",
     ],
-    keywords=["SQLAlchemy", "DataFlex", "FlexODBC"],
+    keywords=["SQLAlchemy", "Paradox", "Borland"],
     project_urls={
         "Source": "https://github.com/the-wondersmith/sqlalchemy-paradox",
     },
@@ -40,6 +40,7 @@ setup(
     zip_safe=False,
     entry_points={
         "sqlalchemy.dialects": [
+            "paradox = sqlalchemy_paradox.pyodbc:ParadoxDialect_pyodbc",
             "paradox.pyodbc = sqlalchemy_paradox.pyodbc:ParadoxDialect_pyodbc",
         ]
     },

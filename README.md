@@ -6,16 +6,17 @@ A SQLAlchemy dialect for the Microsoft Paradox DB ODBC Driver
 
 This dialect is mainly intended to offer an easy way to access the
 Paradox DB flat-file databases of older or EOL'd application-specific
-softwares. It is designed for use with the ODBC driver included with most
-versions of Microsoft Windows, `Microsoft Paradox Driver (*.db)` / **ODBCJT32.DLL**.
+softwares. It is designed for use with the ODBC driver included with
+most versions of Microsoft Windows, `Microsoft Paradox Driver (*.db)` /s
+**ODBCJT32.DLL**.
 
 ## Pre-requisites
 
 - A System or User DSN configured to use the Microsoft Paradox driver
 
-- 32-bit Python. The Microsoft Paradox driver *may* come in a 64-bit version,
-  but using it might run into the same "bittedness" issue experienced with other
-  JET-based ODBC drivers.
+- 32-bit Python. The Microsoft Paradox driver *may* come in a 64-bit
+  version, but using it might run into the same "bittedness" issue
+  experienced with other JET-based ODBC drivers.
 
 ## Co-requisites
 
@@ -27,10 +28,12 @@ place. To install separately, just:
 
 ## Installation
 
-At the time of this writing, I've not yet deemed this library suitable (read: worthy) of publication on PyPI.
-For now, you'll have to install it with:
+At the time of this writing, I've not yet deemed this library suitable
+(read: worthy) of publication on PyPI. For now, you'll have to install
+it with:
 
-> `pip install -U git+https://github.com/the-wondersmith/sqlalchemy-paradox`
+> `pip install -U
+> git+https://github.com/the-wondersmith/sqlalchemy-paradox`
 
 ## Getting Started
 
@@ -54,7 +57,7 @@ session = super_session()
 ## The SQLAlchemy Project
 
 SQLAlchemy-Paradox is based on SQLAlchemy-access, which is part of the
-[SQLAlchemy Project] (https://www.sqlalchemy.org) and *tries* to adhere
+[SQLAlchemy Project](https://www.sqlalchemy.org) and *tries* to adhere
 to the same standards and conventions as the core project.
 
 At the time of this writing, it's unlikely that SQLAlchemy-Paradox
@@ -69,10 +72,9 @@ guidelines on coding and participating in that project.
 
 While I'm aware that this project could desperately use the
 participation of anyone else who actually knows what they're doing,
-Paradox DB may be so esoteric and obscure (at the
-time of this writing) that I wouldn't reasonably expect anyone to actually
-want to. If I am mistaken in that belief, *please God* submit a pull
-request.
+Paradox DB may be so esoteric and obscure (at the time of this writing)
+that I wouldn't reasonably expect anyone to actually want to. If I am
+mistaken in that belief, *please God* submit a pull request.
 
 This library technically *works*, but it's *far* from feature-complete.
 
