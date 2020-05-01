@@ -1,1 +1,1 @@
-from sqlalchemy.testing.suite import *from sqlalchemy.testing.suite import IntegerTest as _IntegerTestclass IntegerTest(_IntegerTest):    def test_huge_int(self):        # bypass test for feature unsupported by Access ODBC        return
+import pytestfrom sqlalchemy.testing.suite import *# from sqlalchemy.testing.suite import IntegerTest as _IntegerTest## class IntegerTest(_IntegerTest):#     def test_huge_int(self):#         # bypass test for feature unsupported by Access ODBC#         return
