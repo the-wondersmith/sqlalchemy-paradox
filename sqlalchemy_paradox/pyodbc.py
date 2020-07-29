@@ -3,7 +3,6 @@
 
 from .base import ParadoxExecutionContext, ParadoxDialect
 from sqlalchemy.connectors.pyodbc import PyODBCConnector
-from sqlalchemy import util
 
 
 class ParadoxExecutionContext_pyodbc(ParadoxExecutionContext):
