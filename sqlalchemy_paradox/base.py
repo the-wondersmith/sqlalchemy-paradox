@@ -4,7 +4,7 @@
 from sqlalchemy.engine import default, reflection
 from sqlalchemy.sql import compiler
 from sqlalchemy import exc, util, types as sqla_types
-from pyodbc import DatabaseError
+from pyodbc import DatabaseError, Error
 from re import match
 
 
@@ -246,6 +246,7 @@ class ParadoxExecutionContext(default.DefaultExecutionContext):
         return super(ParadoxExecutionContext, self).get_rowcount()
 
 
+# noinspection PyArgumentList
 class ParadoxDialect(default.DefaultDialect):
     """ Dialect
     """
@@ -322,7 +323,7 @@ class ParadoxDialect(default.DefaultDialect):
                     vetted_table_names.append(table)
                 else:
                     self.__temp_tables.append(table)
-            except DatabaseError:
+            except (Error, DatabaseError, ):
                 pass
         return vetted_table_names
 
