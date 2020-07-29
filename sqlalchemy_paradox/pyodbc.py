@@ -1,13 +1,20 @@
+""" PyODBC connector for Paradox
+"""
+
 from .base import ParadoxExecutionContext, ParadoxDialect
 from sqlalchemy.connectors.pyodbc import PyODBCConnector
 from sqlalchemy import util
 
 
 class ParadoxExecutionContext_pyodbc(ParadoxExecutionContext):
+    """ Execution context
+    """
     pass
 
 
 class ParadoxDialect_pyodbc(PyODBCConnector, ParadoxDialect):
+    """ Dialect
+    """
 
     execution_ctx_cls = ParadoxExecutionContext_pyodbc
 
