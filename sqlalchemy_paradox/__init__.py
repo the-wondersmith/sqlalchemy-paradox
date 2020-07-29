@@ -1,13 +1,14 @@
-from sqlalchemy.dialects import registry as _registry
+""" SQLAlchemy support for Borland Paradox tables
+"""
 
+import sqlalchemy.dialects as dialects
+import pyodbc
 from .base import ParadoxDialect, Binary, LongVarChar, AlphaNumeric, Number, Short, PdoxDate
 
-import pyodbc
-
-__version__ = "0.0.1"
+__version__ = "0.0.2"
 
 pyodbc.pooling = False  # Left from SQLAlchemy-Access
-_registry.register(
+dialects.registry.register(
     "paradox.pyodbc", "sqlalchemy_paradox.pyodbc", "ParadoxDialect_pyodbc"
 )
 
