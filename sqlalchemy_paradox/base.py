@@ -1,3 +1,6 @@
+""" Dialect Base
+"""
+
 from sqlalchemy.engine import default, reflection
 from sqlalchemy.sql import compiler
 from sqlalchemy import exc, util, types as sqla_types
@@ -35,27 +38,42 @@ class DOUBLE(sqla_types.Float):
     def __repr__(self):
         return util.generic_repr(self, to_inspect=[sqla_types.Float])
 
+
 class BINARY(sqla_types.BLOB):
-    # long varbinary / Size 1073741823, NULLABLE, NOT SEARCHABLE
+    """ Long VarBinary
+    """
+    # Size 1073741823, NULLABLE, NOT SEARCHABLE
     __visit_name__ = "BLOB"
     __sql_data_type__ = -4
 
+
 class LONGVARCHAR(sqla_types.Text):
-    # long varchar  / Size 1073741824, NULLABLE, NOT SEARCHABLE
+    """ Long VarChar
+    """
+    # Size 1073741824, NULLABLE, NOT SEARCHABLE
     __visit_name__ = "TEXT"
     __sql_data_type__ = -1
 
+
 class ALPHANUMERIC(sqla_types.VARCHAR):
+    """ Alphanumeric / Generic VarChar
+    """
     __visit_name__ = "VARCHAR"
     __sql_data_type__ = 12
 
+
 class SHORT(sqla_types.SmallInteger):
-    # smallint / Size 5, NULLABLE, SEARCHABLE
+    """ SmallInt
+    """
+    # Size 5, NULLABLE, SEARCHABLE
     __visit_name__ = "SmallInteger"
     __sql_data_type__ = 5
 
+
 class PDOXDATE(sqla_types.Date):
-    # date / Size 10, NULLABLE, SEARCHABLE
+    """ Paradox Date
+    """
+    # Size 10, NULLABLE, SEARCHABLE
     __visit_name__ = "Date"
     __sql_data_type__ = 9
 
@@ -68,12 +86,12 @@ Short = SHORT
 PdoxDate = PDOXDATE
 
 
-"""
-Map integers returned by the "sql_data_type" column of pyodbc's Cursor.columns method to our dialect types.
-
-These names are what you would retrieve from INFORMATION_SCHEMA.COLUMNS.DATA_TYPE if Paradox
-supported those types of system views.
-"""
+# ###
+# Map integers returned by the "sql_data_type" column of pyodbc's Cursor.columns method to our dialect types.
+#
+# These names are what you would retrieve from INFORMATION_SCHEMA.COLUMNS.DATA_TYPE if Paradox
+# supported those types of system views.
+# ###
 ischema_names = {
     -4: Binary,
     -1: LongVarChar,
@@ -83,8 +101,11 @@ ischema_names = {
     12: AlphaNumeric,
 }
 
+
 class ParadoxTypeCompiler(compiler.GenericTypeCompiler):
-    # The underlying DataFlex driver *really* doesn't support much
+    """ Type Compiler
+    """
+    # The underlying driver *really* doesn't support much
     # in the way of datatypes, so this may be entirely perfunctory
     #
     # It's being done anyway to keep this library as in-line with
@@ -97,16 +118,20 @@ class ParadoxTypeCompiler(compiler.GenericTypeCompiler):
     def visit_FLOAT(self, type_, **kw):
         return super(ParadoxTypeCompiler, self).visit_FLOAT(type_, **kw)
 
-    def visit_DOUBLE(self, type_, **kw):
+    @staticmethod
+    def visit_DOUBLE(*args, **kwargs):
         return DOUBLE.__visit_name__
 
-    def visit_BINARY(self, type_, **kw):
+    @staticmethod
+    def visit_BINARY(*args, **kwargs):
         return BINARY.__visit_name__
 
-    def visit_LONGVARCHAR(self, type_, **kw):
+    @staticmethod
+    def visit_LONGVARCHAR(*args, **kwargs):
         return LONGVARCHAR.__visit_name__
 
-    def visit_ALPHANUMERIC(self, type_, **kw):
+    @staticmethod
+    def visit_ALPHANUMERIC(*args, **kwargs):
         return ALPHANUMERIC.__visit_name__
 
     def visit_SMALLINT(self, type_, **kw):
@@ -115,7 +140,8 @@ class ParadoxTypeCompiler(compiler.GenericTypeCompiler):
     def visit_SmallInteger(self, type_, **kw):
         return super(ParadoxTypeCompiler, self).visit_SMALLINT(type_, **kw)
 
-    def visit_SHORT(self, type_, **kw):
+    @staticmethod
+    def visit_SHORT(*args, **kwargs):
         return SHORT.__visit_name__
 
     def visit_Date(self, type_, **kw):
@@ -124,11 +150,15 @@ class ParadoxTypeCompiler(compiler.GenericTypeCompiler):
     def visit_DATE(self, type_, **kw):
         return super(ParadoxTypeCompiler, self).visit_DATE(type_, **kw)
 
-    def visit_PDOXDATE(self, type_, **kw):
+    @staticmethod
+    def visit_PDOXDATE(*args, **kwargs):
         return PDOXDATE.__visit_name__
 
 
 class ParadoxExecutionContext(default.DefaultExecutionContext):
+    """ Execution Context
+    """
+
     def create_server_side_cursor(self):
         super(ParadoxExecutionContext, self).create_server_side_cursor()
 
@@ -140,6 +170,8 @@ class ParadoxExecutionContext(default.DefaultExecutionContext):
 
 
 class ParadoxDialect(default.DefaultDialect):
+    """ Dialect
+    """
 
     name = "paradox"
 
@@ -148,7 +180,8 @@ class ParadoxDialect(default.DefaultDialect):
 
     __temp_tables = None
 
-    def _check_unicode_returns(self, connection, additional_tests=None):
+    @staticmethod
+    def _check_unicode_returns(*args, **kwargs):
         # The driver should pretty much always be running on a modern
         # Windows system, so it's more or less safe to assume we'll
         # always get a unicode string back for string values
@@ -180,11 +213,13 @@ class ParadoxDialect(default.DefaultDialect):
             )
         return result
 
-    def get_primary_keys(self, connection, table_name, schema=None, **kw):
+    @staticmethod
+    def get_primary_keys(*args, **kwargs):
         # Paradox may or may not support primary keys, doesn't really matter though
         return []
 
-    def get_foreign_keys(self, connection, table_name, schema=None, **kw):
+    @staticmethod
+    def get_foreign_keys(*args, **kwargs):
         # Paradox absolutely *does not* support foreign keys
         return []
 
@@ -218,15 +253,18 @@ class ParadoxDialect(default.DefaultDialect):
             self.get_table_names()
         return self.__temp_tables
 
-    def get_view_names(self, connection, schema=None, **kw):
+    @staticmethod
+    def get_view_names(*args, **kwargs):
         # Paradox doesn't supply View functionality
         return []
 
-    def get_temp_view_names(self, connection, schema=None, **kw):
+    @staticmethod
+    def get_temp_view_names(*args, **kwargs):
         # Paradox doesn't supply View functionality
         return []
 
-    def get_view_definition(self, connection, view_name, schema=None, **kw):
+    @staticmethod
+    def get_view_definition(*args, **kwargs):
         # Paradox doesn't supply View functionality
         return {}
 
@@ -241,7 +279,8 @@ class ParadoxDialect(default.DefaultDialect):
             connection, table_name, schema, **kw
         )
 
-    def get_check_constraints(self, connection, table_name, schema=None, **kw):
+    @staticmethod
+    def get_check_constraints(*args, **kwargs):
         # Ha ha, nope
         return []
 
@@ -255,7 +294,8 @@ class ParadoxDialect(default.DefaultDialect):
 
         return super(ParadoxDialect, self).has_table(connection, table_name, schema)
 
-    def has_sequence(self, connection, sequence_name, schema=None, **kw):
+    @staticmethod
+    def has_sequence(*args, **kwargs):
         # Paradox doesn't support sequences, so it will never have
         # a queried sequence
         return False
