@@ -4,12 +4,14 @@
 from sqlalchemy.engine import default, reflection
 from sqlalchemy.sql import compiler
 from sqlalchemy import exc, util, types as sqla_types
+from pyodbc import DatabaseError
 from re import match
 
 
 # Paradox Types:
 # These are relatively simple, as the underlying ODBC driver only *really* supports
 # something like six different data types rather than the spectrum of modern SQL types
+
 
 class DOUBLE(sqla_types.Float):
     """ Paradox DOUBLE type
@@ -25,9 +27,16 @@ class DOUBLE(sqla_types.Float):
     def __init__(self, precision=None, scale=None, asdecimal=True, **kw):
         self.unsigned = kw.get("unsigned", False)
         self.zerofill = kw.get("zerofill", False)
-        if isinstance(self, DOUBLE) and (
-            (precision is None and scale is not None)
-            or (precision is not None and scale is None)
+        if all(
+            (
+                isinstance(self, DOUBLE),
+                any(
+                    (
+                        all((precision is None, scale is not None)),
+                        all((precision is not None, scale is None)),
+                    )
+                ),
+            )
         ):
             raise exc.ArgumentError(
                 "You must specify both precision and scale or omit both altogether."
@@ -42,6 +51,7 @@ class DOUBLE(sqla_types.Float):
 class BINARY(sqla_types.BLOB):
     """ Long VarBinary
     """
+
     # Size 1073741823, NULLABLE, NOT SEARCHABLE
     __visit_name__ = "BLOB"
     __sql_data_type__ = -4
@@ -50,6 +60,7 @@ class BINARY(sqla_types.BLOB):
 class LONGVARCHAR(sqla_types.Text):
     """ Long VarChar
     """
+
     # Size 1073741824, NULLABLE, NOT SEARCHABLE
     __visit_name__ = "TEXT"
     __sql_data_type__ = -1
@@ -58,6 +69,7 @@ class LONGVARCHAR(sqla_types.Text):
 class ALPHANUMERIC(sqla_types.VARCHAR):
     """ Alphanumeric / Generic VarChar
     """
+
     __visit_name__ = "VARCHAR"
     __sql_data_type__ = 12
 
@@ -65,6 +77,7 @@ class ALPHANUMERIC(sqla_types.VARCHAR):
 class SHORT(sqla_types.SmallInteger):
     """ SmallInt
     """
+
     # Size 5, NULLABLE, SEARCHABLE
     __visit_name__ = "SmallInteger"
     __sql_data_type__ = 5
@@ -73,6 +86,7 @@ class SHORT(sqla_types.SmallInteger):
 class PDOXDATE(sqla_types.Date):
     """ Paradox Date
     """
+
     # Size 10, NULLABLE, SEARCHABLE
     __visit_name__ = "Date"
     __sql_data_type__ = 9
@@ -102,15 +116,59 @@ ischema_names = {
 }
 
 
+class ParadoxSQLCompiler(compiler.SQLCompiler):
+    """ Compiler
+    """
+
+    def get_select_precolumns(self, select, **kw):
+        """ Paradox uses TOP after the SELECT keyword
+            instead of LIMIT after the FROM clause
+        """
+        # (plagiarized from sqlalchemy_access/base.py)
+
+        s = super(ParadoxSQLCompiler, self).get_select_precolumns(select, **kw)
+
+        if getattr(select, "_simple_int_limit", False):
+            # The Paradox ODBC driver doesn't support
+            # bind params in the SELECT clause, so we'll
+            # have to use a literal here instead
+            s += f"TOP {getattr(select, '_limit')} "
+
+        return s
+
+    def limit_clause(self, select, **kw):
+        """ Limit in Paradox is after the SELECT keyword
+        """
+        return ""
+    
+    def visit_sequence(self, *args, **kwargs):
+        super(ParadoxSQLCompiler, self).visit_sequence(*args, **kwargs)
+
+    def visit_empty_set_expr(self, *args, **kwargs):
+        super(ParadoxSQLCompiler, self).visit_empty_set_expr(*args, **kwargs)
+
+    def update_from_clause(self, *args, **kwargs):
+        super(ParadoxSQLCompiler, self).update_from_clause(*args, **kwargs)
+
+    def delete_extra_from_clause(self, *args, **kwargs):
+        super(ParadoxSQLCompiler, self).delete_extra_from_clause(*args, **kwargs)
+
+
 class ParadoxTypeCompiler(compiler.GenericTypeCompiler):
     """ Type Compiler
     """
+
     # The underlying driver *really* doesn't support much
     # in the way of datatypes, so this may be entirely perfunctory
     #
     # It's being done anyway to keep this library as in-line with
     # sqlalchemy-access as possible, as this library is a shameless
     # ripoff of sqlalchemy-access
+    #
+    # A bunch of the functions below should actually be decorated as
+    # @staticmethod, but doing so will cause SQLAlchemy to pitch a fit
+    # So, to keep the linters happy, they do something with the self
+    # parameter by just asserting that it isn't None
 
     def visit_Float(self, type_, **kw):
         return super(ParadoxTypeCompiler, self).visit_FLOAT(type_, **kw)
@@ -118,20 +176,31 @@ class ParadoxTypeCompiler(compiler.GenericTypeCompiler):
     def visit_FLOAT(self, type_, **kw):
         return super(ParadoxTypeCompiler, self).visit_FLOAT(type_, **kw)
 
-    @staticmethod
-    def visit_DOUBLE(*args, **kwargs):
+    def visit_DOUBLE(self, *args, **kwargs):
+        if args:
+            del args
+        if kwargs:
+            del kwargs
+        assert self is not None
         return DOUBLE.__visit_name__
 
-    @staticmethod
-    def visit_BINARY(*args, **kwargs):
+    def visit_BINARY(self, *args, **kwargs):
         return BINARY.__visit_name__
 
-    @staticmethod
-    def visit_LONGVARCHAR(*args, **kwargs):
+    def visit_LONGVARCHAR(self, *args, **kwargs):
+        if args:
+            del args
+        if kwargs:
+            del kwargs
+        assert self is not None
         return LONGVARCHAR.__visit_name__
 
-    @staticmethod
-    def visit_ALPHANUMERIC(*args, **kwargs):
+    def visit_ALPHANUMERIC(self, *args, **kwargs):
+        if args:
+            del args
+        if kwargs:
+            del kwargs
+        assert self is not None
         return ALPHANUMERIC.__visit_name__
 
     def visit_SMALLINT(self, type_, **kw):
@@ -140,8 +209,12 @@ class ParadoxTypeCompiler(compiler.GenericTypeCompiler):
     def visit_SmallInteger(self, type_, **kw):
         return super(ParadoxTypeCompiler, self).visit_SMALLINT(type_, **kw)
 
-    @staticmethod
-    def visit_SHORT(*args, **kwargs):
+    def visit_SHORT(self, *args, **kwargs):
+        if args:
+            del args
+        if kwargs:
+            del kwargs
+        assert self is not None
         return SHORT.__visit_name__
 
     def visit_Date(self, type_, **kw):
@@ -150,8 +223,12 @@ class ParadoxTypeCompiler(compiler.GenericTypeCompiler):
     def visit_DATE(self, type_, **kw):
         return super(ParadoxTypeCompiler, self).visit_DATE(type_, **kw)
 
-    @staticmethod
-    def visit_PDOXDATE(*args, **kwargs):
+    def visit_PDOXDATE(self, *args, **kwargs):
+        if args:
+            del args
+        if kwargs:
+            del kwargs
+        assert self is not None
         return PDOXDATE.__visit_name__
 
 
@@ -175,6 +252,7 @@ class ParadoxDialect(default.DefaultDialect):
 
     name = "paradox"
 
+    statement_compiler = ParadoxSQLCompiler
     type_compiler = ParadoxTypeCompiler
     execution_ctx_cls = ParadoxExecutionContext
 
@@ -189,6 +267,7 @@ class ParadoxDialect(default.DefaultDialect):
 
     @reflection.cache
     def get_columns(self, connection, table_name, schema=None, **kw):
+        print("Triggered `get_columns`")
         pyodbc_cnxn = connection.engine.raw_connection()
         pyodbc_crsr = pyodbc_cnxn.cursor()
         result = list()
@@ -238,12 +317,12 @@ class ParadoxDialect(default.DefaultDialect):
 
         for table in table_names:
             try:
-                pyodbc_crsr.execute(f"SELECT * FROM {table}").fetchone()
+                pyodbc_crsr.execute(" ".join(("SELECT", "*", "FROM", table))).fetchone()
                 if not match(r"^TEMP(\S)*$", table):
                     vetted_table_names.append(table)
                 else:
                     self.__temp_tables.append(table)
-            except Exception:
+            except DatabaseError:
                 pass
         return vetted_table_names
 
