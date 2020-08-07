@@ -35,7 +35,13 @@ class ParadoxDialect_pyodbc(PyODBCConnector, ParadoxDialect):
             filtered_args = list()
             for arg_set in temp:
                 split_up = arg_set.split(";")
-                filtered_args.append(";".join(x for x in split_up if "trusted_connection" not in x.lower()))
+                filtered_args.append(
+                    ";".join(
+                        x
+                        for x in split_up
+                        if "trusted_connection".casefold() not in str(x).casefold()
+                    )
+                )
 
             autocommit_fix = conn_args[1]
             autocommit_fix["autocommit"] = kwargs.get("autocommit", True)
@@ -45,4 +51,3 @@ class ParadoxDialect_pyodbc(PyODBCConnector, ParadoxDialect):
             return ret_val
         else:
             return conn_args
-

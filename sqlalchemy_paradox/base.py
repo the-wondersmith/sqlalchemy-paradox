@@ -4,8 +4,14 @@
 from sqlalchemy.engine import default, reflection
 from sqlalchemy.sql import compiler
 from sqlalchemy import exc, util, types as sqla_types
+from sqlalchemy.sql import elements, functions
 from pyodbc import DatabaseError, Error
+from itertools import chain
+from moz_sql_parser import parse as parse_sql
 from re import match
+
+
+chain = chain.from_iterable
 
 
 # Paradox Types:
@@ -21,7 +27,7 @@ class DOUBLE(sqla_types.Float):
         double precision / Size 15, NULLABLE, SEARCHABLE
     """
 
-    __visit_name__ = "Float"
+    __visit_name__ = "FLOAT"
     __sql_data_type__ = 8
 
     def __init__(self, precision=None, scale=None, asdecimal=True, **kw):
@@ -115,10 +121,163 @@ ischema_names = {
     12: AlphaNumeric,
 }
 
+SQL_KEYWORDS = {
+    "ALPHANUMERIC",
+    "AUTOINCREMENT",
+    "BINARY",
+    "BYTE",
+    "COUNTER",
+    "CURRENCY",
+    "DATABASE",
+    "DATABASENAME",
+    "DATETIME",
+    "DISALLOW",
+    "DISTINCTROW",
+    "DOUBLEFLOAT",
+    "FLOAT4",
+    "FLOAT8",
+    "GENERAL",
+    "IEEEDOUBLE",
+    "IEEESINGLE",
+    "IGNORE",
+    "INT",
+    "INTEGER1",
+    "INTEGER2",
+    "INTEGER4",
+    "LEVEL",
+    "LOGICAL",
+    "LOGICAL1",
+    "LONG",
+    "LONGBINARY",
+    "LONGCHAR",
+    "LONGTEXT",
+    "MEMO",
+    "MONEY",
+    "NOTE",
+    "NUMBER",
+    "OLEOBJECT",
+    "OPTION",
+    "OWNERACCESS",
+    "PARAMETERS",
+    "PERCENT",
+    "PIVOT",
+    "SHORT",
+    "SINGLE",
+    "SINGLEFLOAT",
+    "SMALLINT",
+    "STDEV",
+    "STDEVP",
+    "STRING",
+    "TABLEID",
+    "TEXT",
+    "TOP",
+    "TRANSFORM",
+    "UNSIGNEDBYTE",
+    "VALUES",
+    "VAR",
+    "VARBINARY",
+    "VARP",
+    "YESNO",
+}
+
+SPECIAL_CHARACTERS = {
+    "~",
+    "@",
+    "#",
+    "$",
+    "%",
+    "^",
+    "&",
+    "*",
+    "_",
+    "-",
+    "+",
+    "=",
+    "\\",
+    "}",
+    "{",
+    '"',
+    "'",
+    ";",
+    ":",
+    "?",
+    "/",
+    ">",
+    "<",
+    ",",
+    ".",
+    "!",
+    "[",
+    "]",
+    "|",
+}
+
+FUNCTIONS = {
+    functions.coalesce: "COALESCE",
+    functions.current_date: "CURRENT_DATE",
+    functions.current_time: "CURRENT_TIME",
+    functions.current_timestamp: "CURRENT_TIMESTAMP",
+    functions.current_user: "CURRENT_USER",
+    functions.localtime: "LOCALTIME",
+    functions.localtimestamp: "LOCALTIMESTAMP",
+    functions.random: "RANDOM",
+    functions.sysdate: "SYSDATE",
+    functions.session_user: "SESSION_USER",
+    functions.user: "USER",
+    functions.cube: "CUBE",
+    functions.rollup: "ROLLUP",
+    functions.grouping_sets: "GROUPING SETS",
+}
+
 
 class ParadoxSQLCompiler(compiler.SQLCompiler):
     """ Compiler
     """
+
+    def visit_function(self, func, add_to_result_map=None, **kwargs):
+        if add_to_result_map is not None:
+            add_to_result_map(func.name, func.name, (), func.type)
+
+        disp = getattr(self, f"visit_{func.name.lower()}_func", None)
+        if disp:
+            return disp(func, **kwargs)
+        else:
+            name = FUNCTIONS.get(func.__class__, None)
+            if name:
+                if getattr(func, "_has_args", False):
+                    name += "%(expr)s"
+            else:
+                name = func.name
+                if any(
+                    (
+                        getattr(self.preparer, "_requires_quotes_illegal_chars", bool)(
+                            name
+                        ),
+                        isinstance(name, elements.quoted_name),
+                    )
+                ):
+                    name = self.preparer.quote(name)
+                name = name + "%(expr)s"
+
+            ret_list = [name]
+            for tok in func.packagenames:
+                if any(
+                        (
+                                getattr(
+                                    self.preparer,
+                                    "_requires_quotes_illegal_chars",
+                                    bool,
+                                )(tok),
+                                isinstance(name, elements.quoted_name),
+                        )
+                ):
+                    ret_list.append(self.preparer.quote(tok))
+                else:
+                    ret_list.append(tok)
+
+            ret_string = ".".join(ret_list) % {"expr": self.function_argspec(func, **kwargs)}
+            ret_string = str("{fn " + ret_string + "}")
+            return ret_string
 
     def get_select_precolumns(self, select, **kw):
         """ Paradox uses TOP after the SELECT keyword
@@ -140,7 +299,7 @@ class ParadoxSQLCompiler(compiler.SQLCompiler):
         """ Limit in Paradox is after the SELECT keyword
         """
         return ""
-    
+
     def visit_sequence(self, *args, **kwargs):
         super(ParadoxSQLCompiler, self).visit_sequence(*args, **kwargs)
 
@@ -236,6 +395,46 @@ class ParadoxExecutionContext(default.DefaultExecutionContext):
     """ Execution Context
     """
 
+    __paradox_insert_workaround = dict()
+
+    def handle_dbapi_exception(self, e):
+        print(f"{type(e)} -> {e}")
+        super().handle_dbapi_exception(e)
+
+    def get_lastrowid(self):
+        try:
+            super(ParadoxExecutionContext, self).get_lastrowid()
+        except AttributeError:
+            return None
+
+    # def pre_exec(self):
+    #     if self.isinsert:
+    #         # need to replace self.statement and self.parameters
+    #         parsed_statement = getattr(self, "statement", None)
+    #         self.statement = """INSERT INTO "NAMED" ("First Name", "Last Name") VALUES ('Johnny', 'The Fuck Stick')"""
+    #         self.parameters = (tuple([]), )
+    #         self.parameters = (tuple([]), )
+    #     super(ParadoxExecutionContext, self).pre_exec()
+
+    # def get_lastrowid(self):
+    #     # The Paradox driver doesn't properly handle insert statements when
+    #     # column names containing the `#` character are passed as prt of the query.
+    #     # Instead, we'll have to emit a second query to populate the newly created
+    #     # row with any values that were supposed to be inserted into columns with
+    #     # `#`-containing names
+    #     #
+    #     # This is probably not the *best* idea, because there's no *real* guarantee that we're
+    #     # getting or setting the right information, but hey what're ya gonna do?
+    #     # Hopefully it won't cause issues
+    #     if all([not self.executemany, self.isinsert]):
+    #         table_name = list((str(self.compiled.string).replace("INSERT INTO ", "")).split())[0]
+    #         post_fetch_query = f"""SELECT MAX("Acct #") + 1 FROM {table_name}"""
+    #         ids = self.cursor.execute(post_fetch_query).fetchall()
+    #         # This max call *might* help return the correct ID when multiple IDs are found
+    #         ret_val = max(chain(ids))
+    #         # print(f"Got:\t{ids}\nReturning:\t{ret_val}")
+    #         return ret_val
+
     def create_server_side_cursor(self):
         super(ParadoxExecutionContext, self).create_server_side_cursor()
 
@@ -257,6 +456,8 @@ class ParadoxDialect(default.DefaultDialect):
     type_compiler = ParadoxTypeCompiler
     execution_ctx_cls = ParadoxExecutionContext
 
+    postfetch_lastrowid = False
+
     __temp_tables = None
 
     @staticmethod
@@ -268,11 +469,10 @@ class ParadoxDialect(default.DefaultDialect):
 
     @reflection.cache
     def get_columns(self, connection, table_name, schema=None, **kw):
-        print("Triggered `get_columns`")
-        pyodbc_cnxn = connection.engine.raw_connection()
-        pyodbc_crsr = pyodbc_cnxn.cursor()
+        pyodbc_connection = connection.engine.raw_connection()
+        pyodbc_cursor = pyodbc_connection.cursor()
         result = list()
-        for row in pyodbc_crsr.columns(table=table_name):
+        for row in pyodbc_cursor.columns(table=table_name):
             # Try to match the underlying data_type with our implemented
             # Paradox Types, falling back to AlphaNumeric id we can't
             class_ = ischema_names.get(row.sql_data_type, AlphaNumeric)
@@ -305,10 +505,13 @@ class ParadoxDialect(default.DefaultDialect):
 
     @reflection.cache
     def get_table_names(self, connection, schema=None, **kw):
-        pyodbc_crsr = connection.engine.raw_connection().cursor()
+        pyodbc_cursor = connection.engine.raw_connection().cursor()
         table_names = list(
             set(
-                [x.table_name for x in pyodbc_crsr.tables(tableType="TABLE").fetchall()]
+                (
+                    x.table_name
+                    for x in pyodbc_cursor.tables(tableType="TABLE").fetchall()
+                )
             )
         )
 
@@ -318,12 +521,17 @@ class ParadoxDialect(default.DefaultDialect):
 
         for table in table_names:
             try:
-                pyodbc_crsr.execute(" ".join(("SELECT", "*", "FROM", table))).fetchone()
+                pyodbc_cursor.execute(
+                    " ".join(("SELECT", "*", "FROM", table))
+                ).fetchone()
                 if not match(r"^TEMP(\S)*$", table):
                     vetted_table_names.append(table)
                 else:
                     self.__temp_tables.append(table)
-            except (Error, DatabaseError, ):
+            except (
+                Error,
+                DatabaseError,
+            ):
                 pass
         return vetted_table_names
 
