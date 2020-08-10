@@ -266,20 +266,20 @@ class ParadoxSQLCompiler(compiler.SQLCompiler):
             ret_list = [name]
             for tok in func.packagenames:
                 if any(
-                        (
-                                getattr(
-                                    self.preparer,
-                                    "_requires_quotes_illegal_chars",
-                                    bool,
-                                )(tok),
-                                isinstance(name, elements.quoted_name),
-                        )
+                    (
+                        getattr(self.preparer, "_requires_quotes_illegal_chars", bool,)(
+                            tok
+                        ),
+                        isinstance(name, elements.quoted_name),
+                    )
                 ):
                     ret_list.append(self.preparer.quote(tok))
                 else:
                     ret_list.append(tok)
 
-            ret_string = ".".join(ret_list) % {"expr": self.function_argspec(func, **kwargs)}
+            ret_string = ".".join(ret_list) % {
+                "expr": self.function_argspec(func, **kwargs)
+            }
             ret_string = str("{fn " + ret_string + "}")
             return ret_string
 
@@ -312,48 +312,59 @@ class ParadoxSQLCompiler(compiler.SQLCompiler):
 
     def visit_like_op_binary(self, binary, operator, **kw):
         escape = binary.modifiers.get("escape", None)
+        left = getattr(binary.left, "_compiler_dispatch")(self, **kw)
+        right = getattr(binary.right, "_compiler_dispatch")(self, **kw)
+        ret_string = f"{left} ALIKE {right}"
 
-        return "%s ALIKE %s" % (
-            binary.left._compiler_dispatch(self, **kw),
-            binary.right._compiler_dispatch(self, **kw),
-        ) + (
-            " ESCAPE " + self.render_literal_value(escape, sqla_types.STRINGTYPE)
-            if escape
-            else ""
-        )
+        if escape:
+            ret_string += (
+                f" ESCAPE {self.render_literal_value(escape, sqla_types.STRINGTYPE)}"
+            )
+
+        return ret_string
 
     def visit_notlike_op_binary(self, binary, operator, **kw):
         escape = binary.modifiers.get("escape", None)
-        return "%s NOT ALIKE %s" % (
-            binary.left._compiler_dispatch(self, **kw),
-            binary.right._compiler_dispatch(self, **kw),
-        ) + (
-            " ESCAPE " + self.render_literal_value(escape, sqla_types.STRINGTYPE)
-            if escape
-            else ""
-        )
+        left = getattr(binary.left, "_compiler_dispatch")(self, **kw)
+        right = getattr(binary.right, "_compiler_dispatch")(self, **kw)
+        ret_string = f"{left} NOT ALIKE {right} "
+
+        if escape:
+            ret_string += (
+                f" ESCAPE {self.render_literal_value(escape, sqla_types.STRINGTYPE)}"
+            )
+
+        return ret_string
 
     def visit_ilike_op_binary(self, binary, operator, **kw):
         escape = binary.modifiers.get("escape", None)
-        return "lower(%s) ALIKE lower(%s)" % (
-            binary.left._compiler_dispatch(self, **kw),
-            binary.right._compiler_dispatch(self, **kw),
-        ) + (
-            " ESCAPE " + self.render_literal_value(escape, sqla_types.STRINGTYPE)
-            if escape
-            else ""
+        left = getattr(binary.left, "_compiler_dispatch")(self, **kw)
+        right = getattr(binary.right, "_compiler_dispatch")(self, **kw)
+        ret_string = "".join(
+            ("{fn", f" LOWER({left})", "}", " ALIKE ", f" LOWER({right})", "}")
         )
+
+        if escape:
+            ret_string += (
+                f" ESCAPE {self.render_literal_value(escape, sqla_types.STRINGTYPE)}"
+            )
+
+        return ret_string
 
     def visit_notilike_op_binary(self, binary, operator, **kw):
         escape = binary.modifiers.get("escape", None)
-        return "lower(%s) NOT ALIKE lower(%s)" % (
-            binary.left._compiler_dispatch(self, **kw),
-            binary.right._compiler_dispatch(self, **kw),
-        ) + (
-            " ESCAPE " + self.render_literal_value(escape, sqla_types.STRINGTYPE)
-            if escape
-            else ""
+        left = getattr(binary.left, "_compiler_dispatch")(self, **kw)
+        right = getattr(binary.right, "_compiler_dispatch")(self, **kw)
+        ret_string = "".join(
+            ("{fn", f" LOWER({left})", "}", " NOT ALIKE ", f" LOWER({right})", "}")
         )
+
+        if escape:
+            ret_string += (
+                f" ESCAPE {self.render_literal_value(escape, sqla_types.STRINGTYPE)}"
+            )
+
+        return ret_string
 
     # All methods below here are effectively unimplemented, they only exist
     # to prevent an IDE from pitching a fit about required abstract methods
@@ -453,7 +464,20 @@ class ParadoxExecutionContext(default.DefaultExecutionContext):
     """ Execution Context
     """
 
-    __paradox_insert_workaround = dict()
+    # NOTE: The Paradox ODBC driver has an esoteric bug that causes an
+    #       error to be thrown any time you attempt to execute an insert
+    #       query that references column names containing invalid characters
+    #       such as `#`. This is due to the fact that column names such as
+    #       "Account #" are totally valid in Paradox, but invalid according to
+    #       the ODBC driver's underlying engine.
+    #
+    #       This bug can be side-stepped by simply omitting any column whose
+    #       name contains an invalid character, along with its intended value,
+    #       executing the "sanitized" insert query, and then immediately executing
+    #       an update statement for the reserved columns and values using the
+    #       newly inserted values as in the WHERE clause
+
+    # TODO: Figure out a way to implement the workaround detailed above
 
     def handle_dbapi_exception(self, e):
         print(f"{type(e)} -> {e}")
@@ -464,34 +488,6 @@ class ParadoxExecutionContext(default.DefaultExecutionContext):
             super(ParadoxExecutionContext, self).get_lastrowid()
         except AttributeError:
             return None
-
-    # def pre_exec(self):
-    #     if self.isinsert:
-    #         # need to replace self.statement and self.parameters
-    #         parsed_statement = getattr(self, "statement", None)
-    #         self.statement = """INSERT INTO "NAMED" ("First Name", "Last Name") VALUES ('Johnny', 'The Fuck Stick')"""
-    #         self.parameters = (tuple([]), )
-    #         self.parameters = (tuple([]), )
-    #     super(ParadoxExecutionContext, self).pre_exec()
-
-    # def get_lastrowid(self):
-    #     # The Paradox driver doesn't properly handle insert statements when
-    #     # column names containing the `#` character are passed as prt of the query.
-    #     # Instead, we'll have to emit a second query to populate the newly created
-    #     # row with any values that were supposed to be inserted into columns with
-    #     # `#`-containing names
-    #     #
-    #     # This is probably not the *best* idea, because there's no *real* guarantee that we're
-    #     # getting or setting the right information, but hey what're ya gonna do?
-    #     # Hopefully it won't cause issues
-    #     if all([not self.executemany, self.isinsert]):
-    #         table_name = list((str(self.compiled.string).replace("INSERT INTO ", "")).split())[0]
-    #         post_fetch_query = f"""SELECT MAX("Acct #") + 1 FROM {table_name}"""
-    #         ids = self.cursor.execute(post_fetch_query).fetchall()
-    #         # This max call *might* help return the correct ID when multiple IDs are found
-    #         ret_val = max(chain(ids))
-    #         # print(f"Got:\t{ids}\nReturning:\t{ret_val}")
-    #         return ret_val
 
     def create_server_side_cursor(self):
         super(ParadoxExecutionContext, self).create_server_side_cursor()
@@ -517,6 +513,26 @@ class ParadoxDialect(default.DefaultDialect):
     postfetch_lastrowid = False
 
     __temp_tables = None
+
+    def do_execute(self, cursor, statement, parameters, context=None, *args, **kwargs):
+
+        # TODO: Revisit this, figure out why the parameters aren't being compiled correctly
+
+        params = parameters
+        if all((isinstance(param, str) for param in parameters)):
+            for param in parameters:
+                statement = "".join(
+                    (
+                        statement[: statement.find("?")],
+                        "'",
+                        param,
+                        "'",
+                        statement[statement.find("?") + 1:],
+                    )
+                )
+            params = tuple()
+
+        super(ParadoxDialect, self).do_execute(cursor, statement, params, context)
 
     @staticmethod
     def _check_unicode_returns(*args, **kwargs):
