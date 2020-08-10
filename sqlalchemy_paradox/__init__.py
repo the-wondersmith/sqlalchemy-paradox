@@ -5,7 +5,7 @@ import sqlalchemy.dialects as dialects
 import pyodbc
 from .base import ParadoxDialect, Binary, LongVarChar, AlphaNumeric, Number, Short, PdoxDate
 
-__version__ = "0.0.2"
+__version__ = "0.1.0"
 
 pyodbc.pooling = False  # Left from SQLAlchemy-Access
 dialects.registry.register(
