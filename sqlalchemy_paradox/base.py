@@ -235,6 +235,10 @@ class ParadoxSQLCompiler(compiler.SQLCompiler):
     """
 
     def visit_function(self, func, add_to_result_map=None, **kwargs):
+        # For the most part, this is *identical* to the implementation
+        # of the super method, it just surrounds the function calls
+        # with {fn FUNCTION} so that the ODBC driver will pick them
+        # up correctly
         if add_to_result_map is not None:
             add_to_result_map(func.name, func.name, (), func.type)
 
@@ -299,6 +303,60 @@ class ParadoxSQLCompiler(compiler.SQLCompiler):
         """ Limit in Paradox is after the SELECT keyword
         """
         return ""
+
+    # NOTE: The implementation of the *_binary methods below
+    #       is effectively identical to the implementation of
+    #       the super method for each function, they simply
+    #       replace `LIKE` with `ALIKE` (ANSI LIKE) for improved
+    #       compatibility with the underlying ODBC driver
+
+    def visit_like_op_binary(self, binary, operator, **kw):
+        escape = binary.modifiers.get("escape", None)
+
+        return "%s ALIKE %s" % (
+            binary.left._compiler_dispatch(self, **kw),
+            binary.right._compiler_dispatch(self, **kw),
+        ) + (
+            " ESCAPE " + self.render_literal_value(escape, sqla_types.STRINGTYPE)
+            if escape
+            else ""
+        )
+
+    def visit_notlike_op_binary(self, binary, operator, **kw):
+        escape = binary.modifiers.get("escape", None)
+        return "%s NOT ALIKE %s" % (
+            binary.left._compiler_dispatch(self, **kw),
+            binary.right._compiler_dispatch(self, **kw),
+        ) + (
+            " ESCAPE " + self.render_literal_value(escape, sqla_types.STRINGTYPE)
+            if escape
+            else ""
+        )
+
+    def visit_ilike_op_binary(self, binary, operator, **kw):
+        escape = binary.modifiers.get("escape", None)
+        return "lower(%s) ALIKE lower(%s)" % (
+            binary.left._compiler_dispatch(self, **kw),
+            binary.right._compiler_dispatch(self, **kw),
+        ) + (
+            " ESCAPE " + self.render_literal_value(escape, sqla_types.STRINGTYPE)
+            if escape
+            else ""
+        )
+
+    def visit_notilike_op_binary(self, binary, operator, **kw):
+        escape = binary.modifiers.get("escape", None)
+        return "lower(%s) NOT ALIKE lower(%s)" % (
+            binary.left._compiler_dispatch(self, **kw),
+            binary.right._compiler_dispatch(self, **kw),
+        ) + (
+            " ESCAPE " + self.render_literal_value(escape, sqla_types.STRINGTYPE)
+            if escape
+            else ""
+        )
+
+    # All methods below here are effectively unimplemented, they only exist
+    # to prevent an IDE from pitching a fit about required abstract methods
 
     def visit_sequence(self, *args, **kwargs):
         super(ParadoxSQLCompiler, self).visit_sequence(*args, **kwargs)
