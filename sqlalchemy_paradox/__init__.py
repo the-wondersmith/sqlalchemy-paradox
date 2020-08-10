@@ -3,7 +3,8 @@
 
 import sqlalchemy.dialects as dialects
 import pyodbc
-from .base import ParadoxDialect, Binary, LongVarChar, AlphaNumeric, Number, Short, PdoxDate
+from .base import ParadoxSQLCompiler, ParadoxTypeCompiler, ParadoxExecutionContext, ParadoxDialect
+from .base import Binary, LongVarChar, AlphaNumeric, Number, Short, PdoxDate
 
 __version__ = "0.1.0"
 
@@ -14,6 +15,9 @@ dialects.registry.register(
 
 __all__ = [
     "ParadoxDialect",
+    "ParadoxSQLCompiler",
+    "ParadoxTypeCompiler",
+    "ParadoxExecutionContext",
     "Binary",
     "LongVarChar",
     "AlphaNumeric",
