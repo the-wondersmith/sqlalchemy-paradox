@@ -45,6 +45,7 @@ class ParadoxDialect_pyodbc(PyODBCConnector, ParadoxDialect):
 
             autocommit_fix = conn_args[1]
             autocommit_fix["autocommit"] = kwargs.get("autocommit", True)
+            autocommit_fix["ansi"] = kwargs.get("ansi", True)
 
             ret_val = [filtered_args, autocommit_fix]
 
