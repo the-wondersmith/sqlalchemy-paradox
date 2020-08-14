@@ -32,7 +32,13 @@ class DOUBLE(sqla_types.Float):
     __visit_name__ = "FLOAT"
     __sql_data_type__ = 8
 
-    def __init__(self, precision: Optional[int] = None, scale: Optional[int] = None, asdecimal: bool = True, **kwargs: Optional[Any]) -> None:
+    def __init__(
+        self,
+        precision: Optional[int] = None,
+        scale: Optional[int] = None,
+        asdecimal: bool = True,
+        **kwargs: Optional[Any],
+    ) -> None:
         self.unsigned = kwargs.get("unsigned", False)
         self.zerofill = kwargs.get("zerofill", False)
         if all(
@@ -542,7 +548,7 @@ class ParadoxDialect(default.DefaultDialect):
                         "'",
                         param,
                         "'",
-                        statement[statement.find("?") + 1:],
+                        statement[statement.find("?") + 1 :],
                     )
                 )
             params = tuple()
@@ -583,7 +589,7 @@ class ParadoxDialect(default.DefaultDialect):
         return result
 
     @reflection.cache
-    def get_pk_constraint(self, connection, table_name, *args, **kwargs):
+    def get_pk_constraint(self, *args, **kwargs):
         """ Return information about the primary key constraint on
             table_name`.
 
@@ -603,13 +609,19 @@ class ParadoxDialect(default.DefaultDialect):
         # safely assume that any columns involved in a unique-together index will function
         # as a compound primary key
 
-        uniques = self.get_unique_constraints(connection=connection, table_name=table_name, *args, **kwargs)
+        uniques = self.get_unique_constraints(*args, **kwargs)
 
         if len(uniques) == 1:
-            return {"name": uniques[0].get("name", None), "constrained_columns": uniques[0].get("column_names", list())}
+            return {
+                "name": uniques[0].get("name", None),
+                "constrained_columns": uniques[0].get("column_names", list()),
+            }
         elif len(uniques) > 1:
             best_pk = max(uniques, key=lambda pk: len(pk.get("column_names", list())))
-            return {"name": best_pk.get("name", None), "constrained_columns": best_pk.get("column_names", list())}
+            return {
+                "name": best_pk.get("name", None),
+                "constrained_columns": best_pk.get("column_names", list()),
+            }
         else:
             return {"name": None, "constrained_columns": list()}
 
@@ -742,7 +754,7 @@ class ParadoxDialect(default.DefaultDialect):
         return list(indexes.values())
 
     @reflection.cache
-    def get_unique_constraints(self, connection, table_name, *args, **kwargs):
+    def get_unique_constraints(self, *args, **kwargs):
         r"""Return information about unique constraints in `table_name`.
 
         Given a string `table_name` and an optional string `schema`, return
@@ -758,7 +770,7 @@ class ParadoxDialect(default.DefaultDialect):
           other options passed to the dialect's get_unique_constraints()
           method
         """
-        indexes = self.get_indexes(connection=connection, table_name=table_name, *args, **kwargs)
+        indexes = self.get_indexes(*args, **kwargs)
 
         return list(filter(lambda index: index.get("unique", False) is True, indexes))
 
@@ -783,10 +795,12 @@ class ParadoxDialect(default.DefaultDialect):
 
         catalog = kwargs.get("catalog", None)
         schema = kwargs.get("schema", None)
-        table_type = kwargs.get("tableType", False)
+        table_type = kwargs.get("tableType", None)
         pyodbc_cursor = connection.engine.raw_connection().cursor()
 
-        table_data = pyodbc_cursor.tables(table="LOG", catalog=catalog, schema=schema, tableType=table_type).fetchone()
+        table_data = pyodbc_cursor.tables(
+            table="LOG", catalog=catalog, schema=schema, tableType=table_type
+        ).fetchone()
         comments = getattr(table_data, "remarks", None)
 
         return {"text": comments if comments is not None else ""}
