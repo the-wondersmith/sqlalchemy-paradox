@@ -1,13 +1,15 @@
 """ Dialect Base
 """
 
+from typing import Optional, Union, List, Dict, Any
+
 from sqlalchemy.engine import default, reflection
 from sqlalchemy.sql import compiler
 from sqlalchemy import exc, util, types as sqla_types
 from sqlalchemy.sql import elements, functions
 from pyodbc import DatabaseError, Error
 from itertools import chain
-from moz_sql_parser import parse as parse_sql
+from uuid import uuid4
 from re import match
 
 
@@ -30,9 +32,9 @@ class DOUBLE(sqla_types.Float):
     __visit_name__ = "FLOAT"
     __sql_data_type__ = 8
 
-    def __init__(self, precision=None, scale=None, asdecimal=True, **kw):
-        self.unsigned = kw.get("unsigned", False)
-        self.zerofill = kw.get("zerofill", False)
+    def __init__(self, precision: Optional[int] = None, scale: Optional[int] = None, asdecimal: bool = True, **kwargs: Optional[Any]) -> None:
+        self.unsigned = kwargs.get("unsigned", False)
+        self.zerofill = kwargs.get("zerofill", False)
         if all(
             (
                 isinstance(self, DOUBLE),
@@ -47,10 +49,10 @@ class DOUBLE(sqla_types.Float):
             raise exc.ArgumentError(
                 "You must specify both precision and scale or omit both altogether."
             )
-        super(DOUBLE, self).__init__(precision=precision, asdecimal=asdecimal, **kw)
+        super(DOUBLE, self).__init__(precision=precision, asdecimal=asdecimal, **kwargs)
         self.scale = scale
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return util.generic_repr(self, to_inspect=[sqla_types.Float])
 
 
@@ -59,8 +61,8 @@ class BINARY(sqla_types.BLOB):
     """
 
     # Size 1073741823, NULLABLE, NOT SEARCHABLE
-    __visit_name__ = "BLOB"
-    __sql_data_type__ = -4
+    __visit_name__: str = "BLOB"
+    __sql_data_type__: int = -4
 
 
 class LONGVARCHAR(sqla_types.Text):
@@ -68,16 +70,16 @@ class LONGVARCHAR(sqla_types.Text):
     """
 
     # Size 1073741824, NULLABLE, NOT SEARCHABLE
-    __visit_name__ = "TEXT"
-    __sql_data_type__ = -1
+    __visit_name__: str = "TEXT"
+    __sql_data_type__: int = -1
 
 
 class ALPHANUMERIC(sqla_types.VARCHAR):
     """ Alphanumeric / Generic VarChar
     """
 
-    __visit_name__ = "VARCHAR"
-    __sql_data_type__ = 12
+    __visit_name__: str = "VARCHAR"
+    __sql_data_type__: int = 12
 
 
 class SHORT(sqla_types.SmallInteger):
@@ -85,8 +87,8 @@ class SHORT(sqla_types.SmallInteger):
     """
 
     # Size 5, NULLABLE, SEARCHABLE
-    __visit_name__ = "SmallInteger"
-    __sql_data_type__ = 5
+    __visit_name__: str = "SmallInteger"
+    __sql_data_type__: int = 5
 
 
 class PDOXDATE(sqla_types.Date):
@@ -94,8 +96,8 @@ class PDOXDATE(sqla_types.Date):
     """
 
     # Size 10, NULLABLE, SEARCHABLE
-    __visit_name__ = "Date"
-    __sql_data_type__ = 9
+    __visit_name__: str = "Date"
+    __sql_data_type__: int = 9
 
 
 Binary = BINARY
@@ -261,13 +263,13 @@ class ParadoxSQLCompiler(compiler.SQLCompiler):
                     )
                 ):
                     name = self.preparer.quote(name)
-                name = name + "%(expr)s"
+                name += "%(expr)s"
 
             ret_list = [name]
             for tok in func.packagenames:
                 if any(
                     (
-                        getattr(self.preparer, "_requires_quotes_illegal_chars", bool,)(
+                        getattr(self.preparer, "_requires_quotes_illegal_chars", bool)(
                             tok
                         ),
                         isinstance(name, elements.quoted_name),
@@ -513,6 +515,19 @@ class ParadoxDialect(default.DefaultDialect):
     postfetch_lastrowid = False
 
     __temp_tables = None
+    __vetted_tables = None
+
+    # The Microsoft Paradox ODBC driver *only* supports these ODBC API Functions:
+    #   SQLColAttributes
+    #   SQLColumns
+    #   SQLConfigDataSource
+    #   SQLDriverConnect
+    #   SQLGetInfo
+    #   SQLGetTypeInfo
+    #   SQLSetConnectOption
+    #   SQLStatistics
+    #   SQLTables
+    #   SQLTransact
 
     def do_execute(self, cursor, statement, parameters, context=None, *args, **kwargs):
 
@@ -567,15 +582,48 @@ class ParadoxDialect(default.DefaultDialect):
             )
         return result
 
-    @staticmethod
-    def get_primary_keys(*args, **kwargs):
-        # Paradox may or may not support primary keys, doesn't really matter though
-        return []
+    @reflection.cache
+    def get_pk_constraint(self, connection, table_name, *args, **kwargs):
+        """ Return information about the primary key constraint on
+            table_name`.
+
+            Given a :class:`_engine.Connection`, a string
+            `table_name`, and an optional string `schema`, return primary
+            key information as a dictionary with these keys:
+
+            constrained_columns
+              a list of column names that make up the primary key
+
+            name
+              optional name of the primary key constraint.
+        """
+        # The Microsoft Paradox ODBC driver doesn't really support any get_info style
+        # commands for reflecting data about primary keys. However, due to the way
+        # the Paradox tables themselves internally handle indexing, we can more or less
+        # safely assume that any columns involved in a unique-together index will function
+        # as a compound primary key
+
+        uniques = self.get_unique_constraints(connection=connection, table_name=table_name, *args, **kwargs)
+
+        if len(uniques) == 1:
+            return {"name": uniques[0].get("name", None), "constrained_columns": uniques[0].get("column_names", list())}
+        elif len(uniques) > 1:
+            best_pk = max(uniques, key=lambda pk: len(pk.get("column_names", list())))
+            return {"name": best_pk.get("name", None), "constrained_columns": best_pk.get("column_names", list())}
+        else:
+            return {"name": None, "constrained_columns": list()}
+
+    def get_primary_keys(self, *args, **kwargs):
+        """ Deprecated
+
+            Returns information about the primary keys on a table
+        """
+        return self.get_pk_constraint(*args, **kwargs)
 
     @staticmethod
     def get_foreign_keys(*args, **kwargs):
         # Paradox absolutely *does not* support foreign keys
-        return []
+        return list()
 
     @reflection.cache
     def get_table_names(self, connection, schema=None, **kw):
@@ -589,9 +637,10 @@ class ParadoxDialect(default.DefaultDialect):
             )
         )
 
-        vetted_table_names = list()
         if self.__temp_tables is None:
-            self.__temp_tables = list()
+            self.__temp_tables = set()
+        if self.__vetted_tables is None:
+            self.__vetted_tables = set()
 
         for table in table_names:
             try:
@@ -599,15 +648,15 @@ class ParadoxDialect(default.DefaultDialect):
                     " ".join(("SELECT", "*", "FROM", table))
                 ).fetchone()
                 if not match(r"^TEMP(\S)*$", table):
-                    vetted_table_names.append(table)
+                    self.__vetted_tables.add(table)
                 else:
-                    self.__temp_tables.append(table)
+                    self.__temp_tables.add(table)
             except (
                 Error,
                 DatabaseError,
             ):
                 pass
-        return vetted_table_names
+        return list(self.__vetted_tables)
 
     @reflection.cache
     def get_temp_table_names(self, connection, schema=None, **kw):
@@ -630,37 +679,141 @@ class ParadoxDialect(default.DefaultDialect):
         # Paradox doesn't supply View functionality
         return {}
 
-    def get_indexes(self, connection, table_name, schema=None, **kw):
-        # Currently unsure of weather or not Paradox supports indexes
-        # TODO: Actually implement this
-        return []
+    @reflection.cache
+    def get_indexes(self, connection, table_name, *args, **kwargs):
+        """Return information about indexes in `table_name`.
 
-    def get_unique_constraints(self, connection, table_name, schema=None, **kw):
+        Given a :class:`_engine.Connection`, a string
+        `table_name` and an optional string `schema`, return index
+        information as a list of dictionaries with these keys:
 
-        return super(ParadoxDialect, self).get_unique_constraints(
-            connection, table_name, schema, **kw
+        name
+          the index's name
+
+        column_names
+          list of column names in order
+
+        unique
+          boolean
+        """
+
+        catalog = kwargs.get("catalog", None)
+        schema = kwargs.get("schema", None)
+        unique = kwargs.get("unique", False)
+        quick = kwargs.get("catalog", False)
+        pyodbc_cursor = connection.engine.raw_connection().cursor()
+
+        stat_cols = (
+            "table_cat",
+            "table_schem",
+            "table_name",
+            "non_unique",
+            "index_qualifier",
+            "index_name",
+            "type",
+            "ordinal_position",
+            "column_name",
+            "asc_or_desc",
+            "cardinality",
+            "pages",
+            "filter_condition",
         )
+
+        indexes = {}
+
+        for row in pyodbc_cursor.statistics(
+            table_name, catalog=catalog, schema=schema, unique=unique, quick=quick
+        ).fetchall():
+            if getattr(row, "index_name", None) is not None:
+                if row.index_name in indexes.keys():
+                    indexes[row.index_name]["column_names"].append(row.column_name)
+                else:
+                    indexes[row.index_name] = {
+                        "name": getattr(row, "index_name", None),
+                        "unique": getattr(row, "non_unique", 1) == 0,
+                        "column_names": [
+                            getattr(row, "column_name", f"column_{str(uuid4())}")
+                        ],
+                    }
+                    indexes[row.index_name].update(
+                        {key: getattr(row, key, None) for key in stat_cols}
+                    )
+
+        return list(indexes.values())
+
+    @reflection.cache
+    def get_unique_constraints(self, connection, table_name, *args, **kwargs):
+        r"""Return information about unique constraints in `table_name`.
+
+        Given a string `table_name` and an optional string `schema`, return
+        unique constraint information as a list of dicts with these keys:
+
+        name
+          the unique constraint's name
+
+        column_names
+          list of column names in order
+
+        \**kw
+          other options passed to the dialect's get_unique_constraints()
+          method
+        """
+        indexes = self.get_indexes(connection=connection, table_name=table_name, *args, **kwargs)
+
+        return list(filter(lambda index: index.get("unique", False) is True, indexes))
 
     @staticmethod
     def get_check_constraints(*args, **kwargs):
         # Ha ha, nope
         return []
 
-    def get_table_comment(self, connection, table_name, schema=None, **kw):
+    @reflection.cache
+    def get_table_comment(self, connection, table_name, *args, **kwargs):
+        r"""Return the "comment" for the table identified by `table_name`.
 
-        return super(ParadoxDialect, self).get_table_comment(
-            connection, table_name, schema, **kw
-        )
+        Given a string `table_name` and an optional string `schema`, return
+        table comment information as a dictionary with this key:
 
+        text
+           text of the comment
+
+        Raises ``NotImplementedError`` for dialects that don't support
+        comments.
+        """
+
+        catalog = kwargs.get("catalog", None)
+        schema = kwargs.get("schema", None)
+        table_type = kwargs.get("tableType", False)
+        pyodbc_cursor = connection.engine.raw_connection().cursor()
+
+        table_data = pyodbc_cursor.tables(table="LOG", catalog=catalog, schema=schema, tableType=table_type).fetchone()
+        comments = getattr(table_data, "remarks", None)
+
+        return {"text": comments if comments is not None else ""}
+
+    @reflection.cache
     def has_table(self, connection, table_name, schema=None, **kw):
+        """Check the existence of a particular table in the database.
 
-        return super(ParadoxDialect, self).has_table(connection, table_name, schema)
+        Given a :class:`_engine.Connection` object and a string
+        `table_name`, return True if the given table (possibly within
+        the specified `schema`) exists in the database, False
+        otherwise.
+        """
+        if self.__vetted_tables is None:
+            self.get_table_names(connection=connection, schema=schema, **kw)
+
+        return str(table_name) in self.__vetted_tables
 
     @staticmethod
     def has_sequence(*args, **kwargs):
         # Paradox doesn't support sequences, so it will never have
         # a queried sequence
         return False
+
+    ###
+    # All methods below here are effective unimplemented
+    ###
 
     def _get_server_version_info(self, connection, **kwargs):
 
