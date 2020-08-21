@@ -11,31 +11,10 @@ from pyodbc import DatabaseError, Error, Cursor
 from datetime import datetime, date
 from itertools import chain
 from uuid import uuid4
-from math import modf
 from re import match
 
-from contextlib import contextmanager
-from pathlib import Path
-import sys
 
 chain = chain.from_iterable
-
-
-@contextmanager
-def redirected_stdout(out_file: Union[str, Path]):
-    try:
-        out_file = Path(out_file).resolve()
-        orig_stdout = sys.stdout
-        sys.stdout = out_file.open("w")
-        yield
-    except:
-        yield
-    finally:
-        try:
-            sys.stdout.close()
-        except Exception:
-            pass
-        sys.stdout = orig_stdout
 
 
 # Paradox Types:
@@ -451,7 +430,7 @@ class ParadoxTypeCompiler(compiler.GenericTypeCompiler):
         return ALPHANUMERIC.__visit_name__
 
     def visit_SMALLINT(self, type_, **kw):
-        return self.visit_SHORT(*args, **kwargs)
+        return self.visit_SHORT(type_, **kw)
 
     def visit_SmallInteger(self, *args, **kwargs):
         return self.visit_SHORT(*args, **kwargs)
