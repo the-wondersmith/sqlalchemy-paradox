@@ -7,13 +7,35 @@ from sqlalchemy.engine import default, reflection
 from sqlalchemy.sql import compiler
 from sqlalchemy import exc, util, types as sqla_types
 from sqlalchemy.sql import elements, functions
-from pyodbc import DatabaseError, Error
+from pyodbc import DatabaseError, Error, Cursor
+from datetime import datetime, date
 from itertools import chain
 from uuid import uuid4
+from math import modf
 from re import match
 
+from contextlib import contextmanager
+from pathlib import Path
+import sys
 
 chain = chain.from_iterable
+
+
+@contextmanager
+def redirected_stdout(out_file: Union[str, Path]):
+    try:
+        out_file = Path(out_file).resolve()
+        orig_stdout = sys.stdout
+        sys.stdout = out_file.open("w")
+        yield
+    except:
+        yield
+    finally:
+        try:
+            sys.stdout.close()
+        except Exception:
+            pass
+        sys.stdout = orig_stdout
 
 
 # Paradox Types:
@@ -235,12 +257,16 @@ FUNCTIONS = {
     functions.cube: "CUBE",
     functions.rollup: "ROLLUP",
     functions.grouping_sets: "GROUPING SETS",
+    functions.max: "MAX",
 }
 
 
 class ParadoxSQLCompiler(compiler.SQLCompiler):
     """ Compiler
     """
+
+    def visit_insert(self, insert_stmt, asfrom=False, **kw):
+        return super().visit_insert(insert_stmt, asfrom, **kw)
 
     def visit_function(self, func, add_to_result_map=None, **kwargs):
         # For the most part, this is *identical* to the implementation
@@ -413,79 +439,52 @@ class ParadoxTypeCompiler(compiler.GenericTypeCompiler):
         return super(ParadoxTypeCompiler, self).visit_FLOAT(type_, **kw)
 
     def visit_DOUBLE(self, *args, **kwargs):
-        if args:
-            del args
-        if kwargs:
-            del kwargs
-        assert self is not None
         return DOUBLE.__visit_name__
 
     def visit_BINARY(self, *args, **kwargs):
         return BINARY.__visit_name__
 
     def visit_LONGVARCHAR(self, *args, **kwargs):
-        if args:
-            del args
-        if kwargs:
-            del kwargs
-        assert self is not None
         return LONGVARCHAR.__visit_name__
 
     def visit_ALPHANUMERIC(self, *args, **kwargs):
-        if args:
-            del args
-        if kwargs:
-            del kwargs
-        assert self is not None
         return ALPHANUMERIC.__visit_name__
 
     def visit_SMALLINT(self, type_, **kw):
-        return super(ParadoxTypeCompiler, self).visit_SMALLINT(type_, **kw)
+        return self.visit_SHORT(*args, **kwargs)
 
-    def visit_SmallInteger(self, type_, **kw):
-        return super(ParadoxTypeCompiler, self).visit_SMALLINT(type_, **kw)
+    def visit_SmallInteger(self, *args, **kwargs):
+        return self.visit_SHORT(*args, **kwargs)
 
     def visit_SHORT(self, *args, **kwargs):
-        if args:
-            del args
-        if kwargs:
-            del kwargs
-        assert self is not None
         return SHORT.__visit_name__
 
     def visit_Date(self, type_, **kw):
-        return super(ParadoxTypeCompiler, self).visit_DATE(type_, **kw)
+        return self.visit_DATE(type_, **kw)
 
     def visit_DATE(self, type_, **kw):
         return super(ParadoxTypeCompiler, self).visit_DATE(type_, **kw)
 
     def visit_PDOXDATE(self, *args, **kwargs):
-        if args:
-            del args
-        if kwargs:
-            del kwargs
-        assert self is not None
         return PDOXDATE.__visit_name__
+
+
+setattr(
+    compiler.GenericTypeCompiler, "visit_SmallInteger", ParadoxTypeCompiler.visit_SHORT
+)
+setattr(compiler.GenericTypeCompiler, "visit_SHORT", ParadoxTypeCompiler.visit_SHORT)
+setattr(compiler.GenericTypeCompiler, "visit_SMALLINT", ParadoxTypeCompiler.visit_SHORT)
+setattr(
+    compiler.GenericTypeCompiler, "visit_PDOXDATE", ParadoxTypeCompiler.visit_PDOXDATE
+)
+setattr(compiler.GenericTypeCompiler, "visit_Date", ParadoxTypeCompiler.visit_PDOXDATE)
 
 
 class ParadoxExecutionContext(default.DefaultExecutionContext):
     """ Execution Context
     """
 
-    # NOTE: The Paradox ODBC driver has an esoteric bug that causes an
-    #       error to be thrown any time you attempt to execute an insert
-    #       query that references column names containing invalid characters
-    #       such as `#`. This is due to the fact that column names such as
-    #       "Account #" are totally valid in Paradox, but invalid according to
-    #       the ODBC driver's underlying engine.
-    #
-    #       This bug can be side-stepped by simply omitting any column whose
-    #       name contains an invalid character, along with its intended value,
-    #       executing the "sanitized" insert query, and then immediately executing
-    #       an update statement for the reserved columns and values using the
-    #       newly inserted values as in the WHERE clause
-
-    # TODO: Figure out a way to implement the workaround detailed above
+    cursor: Cursor
 
     def handle_dbapi_exception(self, e):
         print(f"{type(e)} -> {e}")
@@ -523,6 +522,13 @@ class ParadoxDialect(default.DefaultDialect):
     __temp_tables = None
     __vetted_tables = None
 
+    paradox_insert_workaround: Dict[str, Any] = {
+        "update": dict(),
+        "table_name": None,
+        "where": dict(),
+        "execute": False,
+    }
+
     # The Microsoft Paradox ODBC driver *only* supports these ODBC API Functions:
     #   SQLColAttributes
     #   SQLColumns
@@ -535,12 +541,42 @@ class ParadoxDialect(default.DefaultDialect):
     #   SQLTables
     #   SQLTransact
 
-    def do_execute(self, cursor, statement, parameters, context=None, *args, **kwargs):
+    @staticmethod
+    def workaround_formatter(key: str, value: Any) -> str:
+        """ Format parameter values for use with the INSERT bug workaround
+        """
+        if isinstance(value, (int, float,)):
+            # float_check = modf(value)
+            # return f"{key} = {value if float_check[0] > 0 else int(value)}"
+            return f"{key} = {value}"
+        elif isinstance(value, date):
+            date_val = "{d" + f"'{value}'" + "}"
+            return f"{key} = {date_val}"
+        elif isinstance(value, datetime):
+            date_val = "{ts" + f"'{value}'" + "}"
+            return f"{key} = {date_val}"
+        elif value is None:
+            return f"{key} = NULL"
+        else:
+            return f"{key} = '{value}'"
+
+    def do_execute(
+        self,
+        cursor: Cursor,
+        statement: str,
+        parameters: tuple,
+        context: Optional[ParadoxExecutionContext] = None,
+        *args,
+        **kwargs,
+    ):
 
         # TODO: Revisit this, figure out why the parameters aren't being compiled correctly
 
         params = parameters
-        if all((isinstance(param, str) for param in parameters)):
+        if (
+            all((isinstance(param, str) for param in parameters))
+            and not context.isinsert
+        ):
             for param in parameters:
                 statement = "".join(
                     (
@@ -553,7 +589,121 @@ class ParadoxDialect(default.DefaultDialect):
                 )
             params = tuple()
 
-        super(ParadoxDialect, self).do_execute(cursor, statement, params, context)
+        # NOTE: The Paradox ODBC driver has an esoteric bug that causes an
+        #       error to be thrown any time you attempt to execute an insert
+        #       query that references column names containing invalid characters
+        #       such as `#`. This is due to the fact that column names such as
+        #       "Account #" are totally valid in Paradox, but invalid according to
+        #       the ODBC driver's underlying engine.
+        #
+        #       This bug can be side-stepped by simply omitting any column whose
+        #       name contains an invalid character, along with its intended value,
+        #       executing the "sanitized" insert query, and then immediately executing
+        #       an update statement for the reserved columns and values using the
+        #       newly inserted values as in the WHERE clause
+        #
+        #       The code below attempts to implement the workaround detailed above as
+        #       best it can
+
+        if context.isinsert:
+            to_redact = list()
+
+            insert_clause = statement[:12]
+            statement = statement.replace(insert_clause, "")
+            table_name = statement[: statement.find(" ")]
+            statement = statement.replace(table_name + " ", "")
+            columns, values = statement.split(" VALUES ")
+            columns = list(
+                map(
+                    lambda col: col[1:] if col[0] == " " else col,
+                    columns.replace("(", "").replace(")", "").split(","),
+                )
+            )
+            values = list(
+                map(
+                    lambda val: val[1:] if val[0] == " " else val,
+                    values.replace("(", "").replace(")", "").split(","),
+                )
+            )
+
+            for pos, col in enumerate(columns):
+                if "#" in col:
+                    self.paradox_insert_workaround["update"][col] = params[pos]
+                    to_redact.append(pos)
+                else:
+                    self.paradox_insert_workaround["where"][col] = params[pos]
+
+            if len(to_redact) > 0:
+                self.paradox_insert_workaround["table_name"] = table_name
+                self.paradox_insert_workaround["execute"] = True
+                columns = (
+                    col for pos, col in enumerate(columns) if pos not in to_redact
+                )
+                values = (val for pos, val in enumerate(values) if pos not in to_redact)
+                params = tuple(
+                    (
+                        param_
+                        for pos, param_ in enumerate(params)
+                        if pos not in to_redact
+                    )
+                )
+
+            statement = str(
+                f"INSERT INTO {table_name} "
+                + f"({', '.join(columns)}) VALUES "
+                + f"({', '.join(values)})"
+            )
+
+        cursor.execute(statement, params)
+
+        # Apply a workaround for invalid column names in INSERT statements
+        if self.paradox_insert_workaround.get("execute", False):
+            workaround = str(
+                f"UPDATE {self.paradox_insert_workaround.get('table_name')} SET "
+                + ", ".join(
+                    (
+                        self.workaround_formatter(key, value)
+                        for key, value in self.paradox_insert_workaround.get(
+                            "update"
+                        ).items()
+                        if value is not None
+                    )
+                )
+                + " WHERE "
+                + " AND ".join(
+                    (
+                        self.workaround_formatter(key, value)
+                        for key, value in self.paradox_insert_workaround.get(
+                            "where"
+                        ).items()
+                        if value is not None
+                    )
+                )
+            )
+
+            try:
+                cursor.commit()
+            except Exception as err:
+                print(
+                    f"Error committing sanitized INSERT statement:\nStatement: "
+                    + f"{statement}\nError: {type(err)} -> {err}\n"
+                )
+
+            try:
+                cursor.execute(workaround)
+                cursor.commit()
+            except Exception as err:
+                print(
+                    f"Error committing INSERT-bug workaround statement:\nStatement: "
+                    + f"{workaround}\nError: {type(err)} -> {err}\n"
+                )
+
+            self.paradox_insert_workaround = {
+                "update": dict(),
+                "table_name": None,
+                "where": dict(),
+                "execute": False,
+            }
 
     @staticmethod
     def _check_unicode_returns(*args, **kwargs):
