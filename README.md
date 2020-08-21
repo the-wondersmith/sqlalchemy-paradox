@@ -7,8 +7,7 @@ A SQLAlchemy dialect for the Microsoft Paradox DB ODBC Driver
 This dialect is mainly intended to offer an easy way to access the
 Paradox DB flat-file databases of older or EOL'd application-specific
 softwares. It is designed for use with the ODBC driver included with
-most versions of Microsoft Windows, `Microsoft Paradox Driver (*.db)` /s
-**ODBCJT32.DLL**.
+most versions of Microsoft Windows, `Microsoft Paradox Driver (*.db)` **ODBCJT32.DLL**.
 
 ## Pre-requisites
 
@@ -28,12 +27,13 @@ place. To install separately, just:
 
 ## Installation
 
-At the time of this writing, I've not yet deemed this library suitable
-(read: worthy) of publication on PyPI. For now, you'll have to install
-it with:
+PyPI-published version:
 
-> `pip install -U
-> git+https://github.com/the-wondersmith/sqlalchemy-paradox`
+> `pip install -U sqlalchemy-paradox`
+
+Absolute bleeding-edge (probably buggy):
+
+> `pip install -U git+https://github.com/the-wondersmith/sqlalchemy-paradox`
 
 ## Getting Started
 
