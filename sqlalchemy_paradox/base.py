@@ -525,8 +525,6 @@ class ParadoxDialect(default.DefaultDialect):
         """ Format parameter values for use with the INSERT bug workaround
         """
         if isinstance(value, (int, float,)):
-            # float_check = modf(value)
-            # return f"{key} = {value if float_check[0] > 0 else int(value)}"
             return f"{key} = {value}"
         elif isinstance(value, date):
             date_val = "{d" + f"'{value}'" + "}"
@@ -695,7 +693,7 @@ class ParadoxDialect(default.DefaultDialect):
                 cursor.execute(return_select)
             except Exception as err:
                 print(
-                    f"Error retreiving post-INSERT data:\nStatement: "
+                    f"Error retrieving post-INSERT data:\nStatement: "
                     + f"{return_select}\nError: {type(err)} -> {err}\n"
                 )
 
