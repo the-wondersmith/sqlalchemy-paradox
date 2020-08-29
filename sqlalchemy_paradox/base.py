@@ -660,29 +660,51 @@ class ParadoxDialect(default.DefaultDialect):
                 )
             )
 
-            try:
-                cursor.commit()
-            except Exception as err:
-                print(
-                    f"Error committing sanitized INSERT statement:\nStatement: "
-                    + f"{statement}\nError: {type(err)} -> {err}\n"
+            return_select = str(
+                f"SELECT * FROM {self.paradox_insert_workaround.get('table_name')} WHERE "
+                # + " AND ".join(
+                #     (
+                #         self.workaround_formatter(key, value)
+                #         for key, value in self.paradox_insert_workaround.get(
+                #         "update"
+                #     ).items()
+                #         if value is not None
+                #     )
+                # )
+                # + " AND "
+                + " AND ".join(
+                    (
+                        self.workaround_formatter(key, value)
+                        for key, value in self.paradox_insert_workaround.get(
+                            "where"
+                        ).items()
+                        if value is not None
+                    )
                 )
+            )
 
             try:
                 cursor.execute(workaround)
-                cursor.commit()
             except Exception as err:
                 print(
-                    f"Error committing INSERT-bug workaround statement:\nStatement: "
+                    f"Error executing INSERT-bug workaround statement:\nStatement: "
                     + f"{workaround}\nError: {type(err)} -> {err}\n"
                 )
 
-            self.paradox_insert_workaround = {
-                "update": dict(),
-                "table_name": None,
-                "where": dict(),
-                "execute": False,
-            }
+            try:
+                cursor.execute(return_select)
+            except Exception as err:
+                print(
+                    f"Error retreiving post-INSERT data:\nStatement: "
+                    + f"{return_select}\nError: {type(err)} -> {err}\n"
+                )
+
+        self.paradox_insert_workaround = {
+            "update": dict(),
+            "table_name": None,
+            "where": dict(),
+            "execute": False,
+        }
 
     @staticmethod
     def _check_unicode_returns(*args, **kwargs):

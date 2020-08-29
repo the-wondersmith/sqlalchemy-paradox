@@ -19,6 +19,42 @@ class ParadoxDialect_pyodbc(PyODBCConnector, ParadoxDialect):
 
     pyodbc_driver_name = "Microsoft Paradox Driver (*.db)"
 
+
+    def connect(self, *cargs, **cparams):
+        r"""Establish a connection using this dialect's DBAPI.
+
+        The default implementation of this method is::
+
+            def connect(self, *cargs, **cparams):
+                return self.dbapi.connect(*cargs, **cparams)
+
+        The ``*cargs, **cparams`` parameters are generated directly
+        from this dialect's :meth:`.Dialect.create_connect_args` method.
+
+        This method may be used for dialects that need to perform programmatic
+        per-connection steps when a new connection is procured from the
+        DBAPI.
+
+
+        :param \*cargs: positional parameters returned from the
+         :meth:`.Dialect.create_connect_args` method
+
+        :param \*\*cparams: keyword parameters returned from the
+         :meth:`.Dialect.create_connect_args` method.
+
+        :return: a DBAPI connection, typically from the :pep:`249` module
+         level ``.connect()`` function.
+
+        .. seealso::
+
+            :meth:`.Dialect.create_connect_args`
+
+            :meth:`.Dialect.on_connect`
+
+        """
+        assert self is not None
+        return self.dbapi.connect(*cargs, **cparams)
+
     def create_connect_args(self, url, **kwargs):
         # Whatever PyODBC does to create the connection string is probably
         # better than anything we're going to come up with
