@@ -1,90 +1,270 @@
-""" PyODBC connector for Paradox
-"""
+"""SQLAlchemy Support for the Borland / Corel Paradox databases via pyodbc."""
+# coding=utf-8
 
-from .base import ParadoxExecutionContext, ParadoxDialect
+
+from .base import ParadoxDialect, strtobool, cl_in, cg
 from sqlalchemy.connectors.pyodbc import PyODBCConnector
+from urllib.parse import unquote_plus
+from sqlalchemy.engine.url import URL
+from typing import Any, List, Dict, Tuple, Union, Optional
 
 
-class ParadoxExecutionContext_pyodbc(ParadoxExecutionContext):
-    """ Execution context
-    """
-    pass
-
-
+# noinspection PyUnresolvedReferences
 class ParadoxDialect_pyodbc(PyODBCConnector, ParadoxDialect):
-    """ Dialect
-    """
+    """A subclass of the ParadoxDialect for pyodbc."""
 
-    execution_ctx_cls = ParadoxExecutionContext_pyodbc
+    pyodbc_driver_name = "Intersolv Paradox v3.11 (*.db)"
 
-    pyodbc_driver_name = "Microsoft Paradox Driver (*.db)"
+    intersolv_args = {
+        "driver": {
+            "long_name": "DRV",
+            "description": """
+            Supplied directly to pyodbc as the `driver` argument.
+        """,
+            "valid_values": [],
+        },
+        "autocommit": {
+            "long_name": "AC",
+            "description": """
+            Supplied directly to pyodbc as the `autocommit` argument.
+        """,
+            "valid_values": [True, False],
+        },
+        "AUT": {
+            "long_name": "ApplicationUsingThreads",
+            "description": """
+            Ensures that the driver works with multi-threaded applications.
+            The default is 1, which makes the driver thread-safe. When using
+            the driver with single-threaded applications, you may set this
+            option to 0 to avoid additional processing required for ODBC
+            thread-safety standards.
+            """,
+            "valid_values": [0, 1],
+        },
+        "CT": {
+            "long_name": "CreateType",
+            "description": """
+            This attribute specifies the table version for Create Table statements.
+            There are four valid values for this connection string: 3, 4, 5, and null (blank).
+            The numeric values map to the major revision numbers of the Paradox family of products.
+            To override another CreateType setting chosen during data source configuration with
+            the default create type determined by the Level setting in the Paradox section of
+            the IDAPI configuration file, set CreateType= (null).
+            Note: When CreateType is set to 7, the Paradox driver supports table names up to 128
+            characters long. For all other CreateType settings, the driver supports table names up
+            to 8 characters long.
+            """,
+            "valid_values": ["", 3, 4, 5, 7, None],
+        },
+        "DB": {
+            "long_name": "Database",
+            "description": """
+            The directory in which the Paradox files are stored. For this attribute, you can also
+            specify aliases that are defined in your IDAPI configuration file, if you have one. To
+            do this, enclose the alias name in colons. For example, to use the alias MYDATA, specify
+            "Database=:MYDATA:"
+            """,
+            "valid_values": [],
+        },
+        "DSN": {
+            "long_name": "DataSourceName",
+            "description": """
+            A string that identifies a Paradox data source configuration in the system information.
+            Examples include "Accounting" or " Paradox-Server".
+            """,
+            "valid_values": [],
+        },
+        "DQ": {
+            "long_name": "DeferQueryEvaluation",
+            "description": """
+            This attribute determines when a query is evaluated — after all records are read or each time
+            a record is fetched. If DeferQueryEvaluation=0, the driver generates a result set when the
+            first record is fetched. The driver reads all records, evaluates each one against the Where
+            clause, and compiles a result set containing the records that satisfy the search criteria.
+            This process slows performance when the first record is fetched, but activity performed on
+            the result set after this point is much faster, because the result set has already been
+            created. You do not see any additions, deletions, or changes in the database that occur
+            while working from this result set.
 
+            If DeferQueryEvaluation=1 (the default), the driver evaluates the query each time a record
+            is fetched, and stops reading through the records when it finds one that matches the search
+            criteria. This setting avoids the slowdown while fetching the first record, but each fetch
+            takes longer because of the evaluation taking place. The data you retrieve reflect the latest
+            changes to the database; however, a result set is still generated if the query is a Union of
+            multiple Select statements, if it contains the Distinct keyword, or if it has an Order By or
+            Group By clause.
+            """,
+            "valid_values": [0, 1],
+        },
+        "FOC": {
+            "long_name": "FileOpenCache",
+            "description": """
+            The maximum number of unused table opens to cache. For example, when FileOpenCache=4, and a
+            user opens and closes four tables, the tables are not actually closed. The driver keeps them
+            open so that if another query uses one of these tables, the driver does not have to perform
+            another open, which is expensive. The advantage of using file open caching is increased performance.
+            The disadvantage is that a user who tries to open the table exclusively may get a locking conflict
+            even though no one appears to have the table open. The initial default is 0.
+            """,
+            "valid_values": [],
+        },
+        "IS": {
+            "long_name": "IntlSort",
+            "description": """
+            This attribute determines the order that records are retrieved when you issue a Select
+            statement with an Order By clause. If IntlSort=0 (the initial default), the driver uses
+            the ASCII sort order. This order sorts items alphabetically with uppercase letters preceding
+            lowercase letters. For example, "A, b, C" would be sorted as "A, C, b."If IntlSort=1, the
+            driver uses the international sort order as defined by your operating system. This order
+            is always alphabetic, regardless of case; the letters from the previous example would be
+            sorted as "A, b, C." See your operating system documentation concerning the sorting of
+            accented characters.
+            """,
+            "valid_values": [0, 1],
+        },
+        "ND": {
+            "long_name": "NetDir",
+            "description": """
+            The directory containing the PARADOX.NET file that corresponds to the database you have
+            specified. If theParadox database you are using is shared on a network, then every user
+            who accesses it must set this value to point to the same PARADOX.NET file. If not specified,
+            this value is determined by the NetDir setting in the Paradox section of the IDAPI
+            configuration file. If you are not sure how to set this value, contact your network
+            administrator.
+            """,
+            "valid_values": [],
+        },
+        "PW": {
+            "long_name": "Passwords",
+            "description": """
+            A password or list of passwords. You can add 1 to 50 passwords into the system using a
+            comma-separated list of passwords. Passwords are case-sensitive.
+            For example,Passwords=psw1, psw2, psw3.
+            """,
+            "valid_values": [],
+        },
+        "USF": {
+            "long_name": "UltraSafeCommit",
+            "description": """
+            This attribute determines when the driver flushes its changes to disk. If UltraSafeCommit=1,
+            the driver does this at each COMMIT. This decreases performance. The default is 0. This
+            means that the driver flushes its changes to disk when the table is closed or when internal
+            buffers are full. In this case, a machine "crash" before closing a table may cause recent
+            changes to be lost.
+            """,
+            "valid_values": [0, 1],
+        },
+        "ULQ": {
+            "long_name": "UseLongQualifiers",
+            "description": """
+            This attribute specifies whether the driver uses long path names as table qualifiers.
+            With UseLongQualifiers set to 1 path names can be up to 255 characters. The default is 0;
+            maximum length is 128 characters.
+            """,
+            "valid_values": [0, 1],
+        },
+    }
 
-    def connect(self, *cargs, **cparams):
-        r"""Establish a connection using this dialect's DBAPI.
+    @property
+    def arg_name_map(self) -> Dict[str, Optional[Union[str, int]]]:
+        """Mapping for long names to short names."""
+        return {
+            self.intersolv_args.get(key).get("long_name"): key
+            for key in self.intersolv_args
+        }
 
-        The default implementation of this method is::
+    def create_connect_args(
+        self, url: URL
+    ) -> Tuple[List[Any], Dict[str, Optional[Union[int, str]]]]:
+        """Create connection arguments from the supplied URL."""
 
-            def connect(self, *cargs, **cparams):
-                return self.dbapi.connect(*cargs, **cparams)
+        conn_args = {
+            "autocommit": True,
+            "DB": "C:\\Paradox",
+            "ND": None,
+            "AUT": 1,
+            "CT": 4,
+            "DQ": 0,
+            "FOC": 0,
+            "IS": 1,
+            "USF": 0,
+            "ULQ": 1,
+        }
 
-        The ``*cargs, **cparams`` parameters are generated directly
-        from this dialect's :meth:`.Dialect.create_connect_args` method.
+        opts = url.translate_connect_args()
 
-        This method may be used for dialects that need to perform programmatic
-        per-connection steps when a new connection is procured from the
-        DBAPI.
+        if not opts:
+            opts = dict()
+            opts["host"] = url.query.get("odbc_connect", None)
 
-
-        :param \*cargs: positional parameters returned from the
-         :meth:`.Dialect.create_connect_args` method
-
-        :param \*\*cparams: keyword parameters returned from the
-         :meth:`.Dialect.create_connect_args` method.
-
-        :return: a DBAPI connection, typically from the :pep:`249` module
-         level ``.connect()`` function.
-
-        .. seealso::
-
-            :meth:`.Dialect.create_connect_args`
-
-            :meth:`.Dialect.on_connect`
-
-        """
-        assert self is not None
-        return self.dbapi.connect(*cargs, **cparams)
-
-    def create_connect_args(self, url, **kwargs):
-        # Whatever PyODBC does to create the connection string is probably
-        # better than anything we're going to come up with
-        # Truthfully, our only real concern is that we forcibly set a value
-        # for autocommit otherwise the Paradox driver *will* throw an error
-        conn_args = super(ParadoxDialect_pyodbc, self).create_connect_args(url)
-
-        if all((len(conn_args) >= 2, isinstance(conn_args[1], dict))):
-            # Not to contradict the comment above, but
-            # we also need to remove the "trusted_connection" argument
-            # from the connection string if it ends up getting passed in
-            # as that *also* seems to cause the Paradox driver to pitch a fit
-            temp = conn_args[0]
-            filtered_args = list()
-            for arg_set in temp:
-                split_up = arg_set.split(";")
-                filtered_args.append(
-                    ";".join(
-                        x
-                        for x in split_up
-                        if "trusted_connection".casefold() not in str(x).casefold()
-                    )
+        if cg(opts, "host", False):
+            supplied_args = dict(
+                map(
+                    lambda entry: entry.replace("?odbc_connect=", "").split("="),
+                    unquote_plus(opts.get("host")).split("&"),
                 )
+            )
 
-            autocommit_fix = conn_args[1]
-            autocommit_fix["autocommit"] = kwargs.get("autocommit", True)
-            autocommit_fix["ansi"] = kwargs.get("ansi", True)
+            supplied_args = {
+                value: cg(supplied_args, key)
+                if not cl_in(value, supplied_args.keys())
+                else cg(supplied_args, value)
+                for key, value in self.arg_name_map.items()
+            }
 
-            ret_val = [filtered_args, autocommit_fix]
+            conn_args.update(supplied_args)
 
-            return ret_val
+        if cg(conn_args, "driver", cg(conn_args, "drv")) is not None:
+            conn_args["Driver"] = str(
+                cg(conn_args, "driver", cg(conn_args, "drv"))
+            )
         else:
-            return conn_args
+            conn_args["Driver"] = "{Intersolv Paradox v3.11 (*.db)}"
+
+        if cg(conn_args, "autocommit", cg(conn_args, "ac")) is not None:
+            conn_args["autocommit"] = strtobool(
+                cg(conn_args, "autocommit", cg(conn_args, "ac"))
+            )
+        else:
+            conn_args["autocommit"] = True
+
+        return (
+            [],
+            {key: value for key, value in conn_args.items() if value is not None},
+        )
+
+    def connect(self, *args: Any, **kwargs: Any):
+        """Establish a connection using pyodbc.
+        """
+
+        if cg(kwargs, "dsn", False):
+            return self.dbapi.connect(
+                f"DSN={cg(kwargs, 'dsn', '')}",
+                autocommit=cg(kwargs, "autocommit", cg(kwargs, "ac", False)),
+            )
+
+        conn_string = ";".join(
+            (
+                "Driver=" + cg(kwargs, "driver", "{Intersolv Paradox v3.11 (*.db)}"),
+                ";".join(
+                    (
+                        f"{key}={value}"
+                        for key, value in kwargs.items()
+                        if all(
+                            (
+                                not cl_in(key, ("driver", "autocommit", "dsn")),
+                                cl_in(key, self.intersolv_args.keys()),
+                            )
+                        )
+                    )
+                ),
+            )
+        )
+
+        non_conn_args = {
+            key: value
+            for key, value in kwargs.items()
+            if not cl_in(key, self.intersolv_args.keys())
+        }
+
+        return self.dbapi.connect(conn_string, **non_conn_args)

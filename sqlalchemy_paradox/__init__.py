@@ -1,27 +1,51 @@
-""" SQLAlchemy support for Borland Paradox tables
-"""
+"""SQLAlchemy support for Borland / Corel Paradox databases."""
+# coding=utf-8
 
-import sqlalchemy.dialects as dialects
 import pyodbc
-from .base import ParadoxSQLCompiler, ParadoxTypeCompiler, ParadoxExecutionContext, ParadoxDialect
-from .base import Binary, LongVarChar, AlphaNumeric, Number, Short, PdoxDate
+from sqlalchemy.dialects import registry as _registry
 
-__version__ = "0.1.2"
+from .base import (
+    nc,
+    cg,
+    Char,
+    Date,
+    Time,
+    cl_in,
+    BigInt,
+    Double,
+    Binary,
+    Decimal,
+    Logical,
+    SmallInt,
+    strtobool,
+    Timestamp,
+    LongVarChar,
+    LongVarBinary,
+)
 
-pyodbc.pooling = False  # Left from SQLAlchemy-Access
-dialects.registry.register(
+__version__ = "0.0.1"
+
+pyodbc.pooling = True  # Makes the ODBC overhead a little more manageable
+_registry.register(
     "paradox.pyodbc", "sqlalchemy_paradox.pyodbc", "ParadoxDialect_pyodbc"
 )
 
-__all__ = [
-    "ParadoxDialect",
-    "ParadoxSQLCompiler",
-    "ParadoxTypeCompiler",
-    "ParadoxExecutionContext",
+__all__ = (
+    "nc",
+    "cg",
+    "Char",
+    "Date",
+    "Time",
+    "cl_in",
+    "BigInt",
+    "Double",
     "Binary",
+    "Decimal",
+    "Logical",
+    "SmallInt",
+    "strtobool",
+    "Timestamp",
+    "__version__",
     "LongVarChar",
-    "AlphaNumeric",
-    "Number",
-    "Short",
-    "PdoxDate"
-]
+    "LongVarBinary",
+)
