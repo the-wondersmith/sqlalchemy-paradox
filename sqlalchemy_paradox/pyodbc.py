@@ -4,6 +4,7 @@
 
 from .base import ParadoxDialect, strtobool, cl_in, cg
 from sqlalchemy.connectors.pyodbc import PyODBCConnector
+from itertools import chain
 from urllib.parse import unquote_plus
 from sqlalchemy.engine.url import URL
 from typing import Any, List, Dict, Tuple, Union, Optional
@@ -168,14 +169,9 @@ class ParadoxDialect_pyodbc(PyODBCConnector, ParadoxDialect):
     @property
     def arg_name_map(self) -> Dict[str, Optional[Union[str, int]]]:
         """Mapping for long names to short names."""
-        return {
-            self.intersolv_args.get(key).get("long_name"): key
-            for key in self.intersolv_args
-        }
+        return {self.intersolv_args.get(key).get("long_name"): key for key in self.intersolv_args}
 
-    def create_connect_args(
-        self, url: URL
-    ) -> Tuple[List[Any], Dict[str, Optional[Union[int, str]]]]:
+    def create_connect_args(self, url: URL) -> Tuple[List[Any], Dict[str, Optional[Union[int, str]]]]:
         """Create connection arguments from the supplied URL."""
 
         conn_args = {
@@ -198,33 +194,28 @@ class ParadoxDialect_pyodbc(PyODBCConnector, ParadoxDialect):
             opts["host"] = url.query.get("odbc_connect", None)
 
         if cg(opts, "host", False):
-            supplied_args = dict(
-                map(
-                    lambda entry: entry.replace("?odbc_connect=", "").split("="),
-                    unquote_plus(opts.get("host")).split("&"),
+            supplied_args = {
+                pair[0]: pair[1]
+                for pair in map(
+                    lambda entry: entry.split("="),
+                    chain.from_iterable(map(lambda item: item.split(";"), unquote_plus(opts.get("host")).split("&"))),
                 )
-            )
+            }
 
             supplied_args = {
-                value: cg(supplied_args, key)
-                if not cl_in(value, supplied_args.keys())
-                else cg(supplied_args, value)
+                value: cg(supplied_args, key) if not cl_in(value, supplied_args.keys()) else cg(supplied_args, value)
                 for key, value in self.arg_name_map.items()
             }
 
             conn_args.update(supplied_args)
 
         if cg(conn_args, "driver", cg(conn_args, "drv")) is not None:
-            conn_args["Driver"] = str(
-                cg(conn_args, "driver", cg(conn_args, "drv"))
-            )
+            conn_args["Driver"] = str(cg(conn_args, "driver", cg(conn_args, "drv")))
         else:
             conn_args["Driver"] = "{Intersolv Paradox v3.11 (*.db)}"
 
         if cg(conn_args, "autocommit", cg(conn_args, "ac")) is not None:
-            conn_args["autocommit"] = strtobool(
-                cg(conn_args, "autocommit", cg(conn_args, "ac"))
-            )
+            conn_args["autocommit"] = strtobool(cg(conn_args, "autocommit", cg(conn_args, "ac")))
         else:
             conn_args["autocommit"] = True
 
@@ -234,8 +225,7 @@ class ParadoxDialect_pyodbc(PyODBCConnector, ParadoxDialect):
         )
 
     def connect(self, *args: Any, **kwargs: Any):
-        """Establish a connection using pyodbc.
-        """
+        """Establish a connection using pyodbc."""
 
         if cg(kwargs, "dsn", False):
             return self.dbapi.connect(
@@ -261,10 +251,6 @@ class ParadoxDialect_pyodbc(PyODBCConnector, ParadoxDialect):
             )
         )
 
-        non_conn_args = {
-            key: value
-            for key, value in kwargs.items()
-            if not cl_in(key, self.intersolv_args.keys())
-        }
+        non_conn_args = {key: value for key, value in kwargs.items() if not cl_in(key, self.intersolv_args.keys())}
 
         return self.dbapi.connect(conn_string, **non_conn_args)
