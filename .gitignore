@@ -1,1 +1,70 @@
-# Local project-specific filesconfig.jsonorig*.pyold*.py*.log.hypothesis.hypothesis/*.hypothesis/**.coveragetests/env.pydev_data/**install_package/****/scratch.*# Temporary Python files*.pyc*.egg-info__pycache__.ipynb_checkpointssetup.py# Temporary OS filesIcon*# Temporary virtual environment files/.cache//.venv/# Temporary server files.env*.pid# Generated documentation/docs/gen//docs/apidocs//site//*.html/docs/*.png# Google Drive*.gdoc*.gsheet*.gslides*.gdraw# Testing and coverage results/.coverage/.coverage.*/htmlcov/# Build and release directories/build//dist/*.spec# Sublime Text*.sublime-workspace# Eclipse.settings
+# Local project-specific files
+.idea
+.idea/*
+.idea/**
+config.json
+orig*.py
+old*.py
+*.log
+.hypothesis
+.hypothesis/*
+.hypothesis/**
+.coverage
+tests/env.py
+**/scratch*.*
+**/env.*
+
+# Temporary Python files
+*.pyc
+*.egg-info
+__pycache__
+.ipynb_checkpoints
+setup.py
+
+# Temporary OS files
+Icon*
+
+# Temporary virtual environment files
+/.cache/
+/.venv/
+
+# Temporary server files
+.env
+*.pid
+
+# Generated documentation
+/docs/gen/
+/docs/apidocs/
+/site/
+/*.html
+/docs/*.png
+
+# Google Drive
+*.gdoc
+*.gsheet
+*.gslides
+*.gdraw
+
+# Testing and coverage results
+/.coverage
+/.coverage.*
+/htmlcov/
+
+# Build and release directories
+/build/
+/dist/
+*.spec
+
+# Sublime Text
+*.sublime-workspace
+
+# Eclipse
+.settings
+/.idea/
+/pytest.ini
+/.coveragerc
+/.verchew.ini
+/.pydocstyle.ini
+/Makefile
+/mkdocs.yml
+/scent.py
