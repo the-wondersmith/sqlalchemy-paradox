@@ -1,0 +1,563 @@
+# System Related (Fatal Error)
+
+  8449 : 0x2101 : Cannot open a system file.
+  8450 : 0x2102 : I/O error on a system file.
+  8451 : 0x2103 : Data structure corruption.
+  8452 : 0x2104 : Cannot find Engine configuration file.
+  8453 : 0x2105 : Cannot write to Engine configuration file.
+  8454 : 0x2106 : Cannot initialize with different configuration file.
+  8455 : 0x2107 : System has been illegally re-entered.
+  8456 : 0x2108 : Cannot locate IDAPI32  .DLL.
+  8457 : 0x2109 : Cannot load IDAPI32  .DLL.
+  8458 : 0x210A : Cannot load an IDAPI service library.
+  8459 : 0x210B : Cannot create or open temporary file.
+  8460 : 0x210C : Trying to load multiple IDAPIxx.DLL
+  8461 : 0x210D : Shared Memory Conflict
+
+# Object of Interest not Found
+
+  8705 : 0x2201 : At beginning of table.
+  8706 : 0x2202 : At end of table.
+  8707 : 0x2203 : Record moved because key value changed.
+  8708 : 0x2204 : Record/Key deleted.
+  8709 : 0x2205 : No current record.
+  8710 : 0x2206 : Could not find record.
+  8711 : 0x2207 : End of BLOB.
+  8712 : 0x2208 : Could not find object.
+  8713 : 0x2209 : Could not find family member.
+  8714 : 0x220A : BLOB file is missing.
+  8715 : 0x220B : Could not find language driver.
+
+# Physical Data Corruption 
+
+  8961 : 0x2301 : Corrupt table/index header.
+  8962 : 0x2302 : Corrupt file - other than header.
+  8963 : 0x2303 : Corrupt Memo/BLOB file.
+  8965 : 0x2305 : Corrupt index.
+  8966 : 0x2306 : Corrupt lock file.
+  8967 : 0x2307 : Corrupt family file.
+  8968 : 0x2308 : Corrupt or missing .VAL file.
+  8969 : 0x2309 : Foreign index file format.
+
+# I/O related error 
+
+  9217 : 0x2401 : Read failure.
+  9218 : 0x2402 : Write failure.
+  9219 : 0x2403 : Cannot access directory.
+  9220 : 0x2404 : File Delete operation failed.
+  9221 : 0x2405 : Cannot access file.
+  9222 : 0x2406 : Access to table disabled because of previous error.
+
+# Resource or Limit error 
+
+  9473 : 0x2501 : Insufficient memory for this operation.
+  9474 : 0x2502 : Not enough file handles.
+  9475 : 0x2503 : Insufficient disk space.
+  9476 : 0x2504 : Temporary table resource limit.
+  9477 : 0x2505 : Record size is too big for table.
+  9478 : 0x2506 : Too many open cursors.
+  9479 : 0x2507 : Table is full.
+  9480 : 0x2508 : Too many sessions from this workstation.
+  9481 : 0x2509 : Serial number limit (Paradox).
+  9482 : 0x250A : Some internal limit (see context).
+  9483 : 0x250B : Too many open tables.
+  9484 : 0x250C : Too many cursors per table.
+  9485 : 0x250D : Too many record locks on table.
+  9486 : 0x250E : Too many clients.
+  9487 : 0x250F : Too many indexes on table.
+  9488 : 0x2510 : Too many sessions.
+  9489 : 0x2511 : Too many open databases.
+  9490 : 0x2512 : Too many passwords.
+  9491 : 0x2513 : Too many active drivers.
+  9492 : 0x2514 : Too many fields in Table Create.
+  9493 : 0x2515 : Too many table locks.
+  9494 : 0x2516 : Too many open BLOBs.
+  9495 : 0x2517 : Lock file has grown too large.
+  9496 : 0x2518 : Too many open queries.
+  9498 : 0x251A : Too many BLOBs.
+  9499 : 0x251B : File name is too long for a Paradox version 5.0 table.
+  9500 : 0x251C : Row fetch limit exceeded.
+  9501 : 0x251D : Long name not allowed for this tablelevel.
+  9502 : 0x251E : Insufficient shared memory available.
+
+# Integrity Violation 
+
+  9729 : 0x2601 : Key violation.
+  9730 : 0x2602 : Minimum validity check failed.
+  9731 : 0x2603 : Maximum validity check failed.
+  9732 : 0x2604 : Field value required.
+  9733 : 0x2605 : Master record missing.
+  9734 : 0x2606 : Master has detail records. Cannot delete or modify.
+  9735 : 0x2607 : Master table level is incorrect.
+  9736 : 0x2608 : Field value out of lookup table range.
+  9737 : 0x2609 : Lookup Table Open operation failed.
+  9738 : 0x260A : Detail Table Open operation failed.
+  9739 : 0x260B : Master Table Open operation failed.
+  9740 : 0x260C : Field is blank.
+  9741 : 0x260D : Link to master table already defined.
+  9742 : 0x260E : Master table is open.
+  9743 : 0x260F : Detail table(s) exist.
+  9744 : 0x2610 : Master has detail records. Cannot empty it.
+  9745 : 0x2611 : Self referencing referential integrity must be entered one at a time with no other changes to the table
+  9746 : 0x2612 : Detail table is open.
+  9747 : 0x2613 : Cannot make this master a detail of another table if its details are not empty.
+  9748 : 0x2614 : Referential integrity fields must be indexed.
+  9749 : 0x2615 : A table linked by referential integrity requires password to open.
+  9750 : 0x2616 : Field(s) linked to more than one master.
+  9751 : 0x2617 : Expression validity check failed.
+
+# Invalid Request 
+
+  9985 : 0x2701 : Number is out of range.
+  9986 : 0x2702 : Invalid parameter.
+  9987 : 0x2703 : Invalid file name.
+  9988 : 0x2704 : File does not exist.
+  9989 : 0x2705 : Invalid option.
+  9990 : 0x2706 : Invalid handle to the function.
+  9991 : 0x2707 : Unknown table type.
+  9992 : 0x2708 : Cannot open file.
+  9993 : 0x2709 : Cannot redefine primary key.
+  9994 : 0x270A : Cannot change this RINTDesc.
+  9995 : 0x270B : Foreign and primary key do not match.
+  9996 : 0x270C : Invalid modify request.
+  9997 : 0x270D : Index does not exist.
+  9998 : 0x270E : Invalid offset into the BLOB.
+  9999 : 0x270F : Invalid descriptor number.
+ 10000 : 0x2710 : Invalid field type.
+ 10001 : 0x2711 : Invalid field descriptor.
+ 10002 : 0x2712 : Invalid field transformation.
+ 10003 : 0x2713 : Invalid record structure.
+ 10004 : 0x2714 : Invalid descriptor.
+ 10005 : 0x2715 : Invalid array of index descriptors.
+ 10006 : 0x2716 : Invalid array of validity check descriptors.
+ 10007 : 0x2717 : Invalid array of referential integrity descriptors.
+ 10008 : 0x2718 : Invalid ordering of tables during restructure.
+ 10009 : 0x2719 : Name not unique in this context.
+ 10010 : 0x271A : Index name required.
+ 10011 : 0x271B : Invalid session handle.
+ 10012 : 0x271C : invalid restructure operation.
+ 10013 : 0x271D : Driver not known to system.
+ 10014 : 0x271E : Unknown database.
+ 10015 : 0x271F : Invalid password given.
+ 10016 : 0x2720 : No callback function.
+ 10017 : 0x2721 : Invalid callback buffer length.
+ 10018 : 0x2722 : Invalid directory.
+ 10019 : 0x2723 : Translate Error. Value out of bounds.
+ 10020 : 0x2724 : Cannot set cursor of one table to another.
+ 10021 : 0x2725 : Bookmarks do not match table.
+ 10022 : 0x2726 : Invalid index/tag name.
+ 10023 : 0x2727 : Invalid index descriptor.
+ 10024 : 0x2728 : Table does not exist.
+ 10025 : 0x2729 : Table has too many users.
+ 10026 : 0x272A : Cannot evaluate Key or Key does not pass filter condition.
+ 10027 : 0x272B : Index already exists.
+ 10028 : 0x272C : Index is open.
+ 10029 : 0x272D : Invalid BLOB length.
+ 10030 : 0x272E : Invalid BLOB handle in record buffer.
+ 10031 : 0x272F : Table is open.
+ 10032 : 0x2730 : Need to do (hard) restructure.
+ 10033 : 0x2731 : Invalid mode.
+ 10034 : 0x2732 : Cannot close index.
+ 10035 : 0x2733 : Index is being used to order table.
+ 10036 : 0x2734 : Unknown user name or password.
+ 10037 : 0x2735 : Multi-level cascade is not supported.
+ 10038 : 0x2736 : Invalid field name.
+ 10039 : 0x2737 : Invalid table name.
+ 10040 : 0x2738 : Invalid linked cursor expression.
+ 10041 : 0x2739 : Name is reserved.
+ 10042 : 0x273A : Invalid file extension.
+ 10043 : 0x273B : Invalid language Driver.
+ 10044 : 0x273C : Alias is not currently opened.
+ 10045 : 0x273D : Incompatible record structures.
+ 10046 : 0x273E : Name is reserved by DOS.
+ 10047 : 0x273F : Destination must be indexed.
+ 10048 : 0x2740 : Invalid index type
+ 10049 : 0x2741 : Language Drivers of Table and Index do not match
+ 10050 : 0x2742 : Filter handle is invalid
+ 10051 : 0x2743 : Invalid Filter
+ 10052 : 0x2744 : Invalid table create request
+ 10053 : 0x2745 : Invalid table delete request
+ 10054 : 0x2746 : Invalid index create request
+ 10055 : 0x2747 : Invalid index delete request
+ 10056 : 0x2748 : Invalid table specified
+ 10058 : 0x274A : Invalid Time.
+ 10059 : 0x274B : Invalid Date.
+ 10060 : 0x274C : Invalid Datetime
+ 10061 : 0x274D : Tables in different directories
+ 10062 : 0x274E : Mismatch in the number of arguments
+ 10063 : 0x274F : Function not found in service library.
+ 10064 : 0x2750 : Must use baseorder for this operation.
+ 10065 : 0x2751 : Invalid procedure name
+ 10066 : 0x2752 : The field map is invalid.
+
+# Locking/Contention related 
+
+ 10241 : 0x2801 : Record locked by another user.
+ 10242 : 0x2802 : Unlock failed.
+ 10243 : 0x2803 : Table is busy.
+ 10244 : 0x2804 : Directory is busy.
+ 10245 : 0x2805 : File is locked.
+ 10246 : 0x2806 : Directory is locked.
+ 10247 : 0x2807 : Record already locked by this session.
+ 10248 : 0x2808 : Object not locked.
+ 10249 : 0x2809 : Lock time out.
+ 10250 : 0x280A : Key group is locked.
+ 10251 : 0x280B : Table lock was lost.
+ 10252 : 0x280C : Exclusive access was lost.
+ 10253 : 0x280D : Table cannot be opened for exclusive use.
+ 10254 : 0x280E : Conflicting record lock in this session.
+ 10255 : 0x280F : A deadlock was detected.
+ 10256 : 0x2810 : A user transaction is already in progress.
+ 10257 : 0x2811 : No user transaction is currently in progress.
+ 10258 : 0x2812 : Record lock failed.
+ 10259 : 0x2813 : Couldn't perform the edit because another user changed the record.
+ 10260 : 0x2814 : Couldn't perform the edit because another user deleted or moved the record.
+
+# Security Related Access Violation
+
+ 10497 : 0x2901 : Insufficient field rights for operation.
+ 10498 : 0x2902 : Insufficient table rights for operation. Password required.
+ 10499 : 0x2903 : Insufficient family rights for operation.
+ 10500 : 0x2904 : This directory is read only.
+ 10501 : 0x2905 : Database is read only.
+ 10502 : 0x2906 : Trying to modify read-only field.
+ 10503 : 0x2907 : Encrypted dBASE tables not supported.
+ 10504 : 0x2908 : Insufficient SQL rights for operation.
+
+# Invalid Context 
+
+ 10753 : 0x2A01 : Field is not a BLOB.
+ 10754 : 0x2A02 : BLOB already opened.
+ 10755 : 0x2A03 : BLOB not opened.
+ 10756 : 0x2A04 : Operation not applicable.
+ 10757 : 0x2A05 : Table is not indexed.
+ 10758 : 0x2A06 : Engine not initialized.
+ 10759 : 0x2A07 : Attempt to re-initialize Engine.
+ 10760 : 0x2A08 : Attempt to mix objects from different sessions.
+ 10761 : 0x2A09 : Paradox driver not active.
+ 10762 : 0x2A0A : Driver not loaded.
+ 10763 : 0x2A0B : Table is read only.
+ 10764 : 0x2A0C : No associated index.
+ 10765 : 0x2A0D : Table(s) open. Cannot perform this operation.
+ 10766 : 0x2A0E : Table does not support this operation.
+ 10767 : 0x2A0F : Index is read only.
+ 10768 : 0x2A10 : Table does not support this operation because it is not uniquely indexed.
+ 10769 : 0x2A11 : Operation must be performed on the current session.
+ 10770 : 0x2A12 : Invalid use of keyword.
+ 10771 : 0x2A13 : Connection is in use by another statement.
+ 10772 : 0x2A14 : Passthrough SQL connection must be shared
+
+# Non-Idapi OS Error
+
+ 11009 : 0x2B01 : Invalid function number.
+ 11010 : 0x2B02 : File or directory does not exist.
+ 11011 : 0x2B03 : Path not found.
+ 11012 : 0x2B04 : Too many open files. You may need to increase MAXFILEHANDLE limit in IDAPI configuration.
+ 11013 : 0x2B05 : Permission denied.
+ 11014 : 0x2B06 : Bad file number.
+ 11015 : 0x2B07 : Memory blocks destroyed.
+ 11016 : 0x2B08 : Not enough memory.
+ 11017 : 0x2B09 : Invalid memory block address.
+ 11018 : 0x2B0A : Invalid environment.
+ 11019 : 0x2B0B : Invalid format.
+ 11020 : 0x2B0C : Invalid access code.
+ 11021 : 0x2B0D : Invalid data.
+ 11023 : 0x2B0F : Device does not exist.
+ 11024 : 0x2B10 : Attempt to remove current directory.
+ 11025 : 0x2B11 : Not same device.
+ 11026 : 0x2B12 : No more files.
+ 11027 : 0x2B13 : Invalid argument.
+ 11028 : 0x2B14 : Argument list is too long.
+ 11029 : 0x2B15 : Execution format error.
+ 11030 : 0x2B16 : Cross-device link.
+ 11041 : 0x2B21 : Math argument.
+ 11042 : 0x2B22 : Result is too large.
+ 11043 : 0x2B23 : File already exists.
+ 11047 : 0x2B27 : Unknown internal operating system error.
+ 11058 : 0x2B32 : Share violation.
+ 11059 : 0x2B33 : Lock violation.
+ 11060 : 0x2B34 : Critical DOS Error.
+ 11061 : 0x2B35 : Drive not ready.
+ 11108 : 0x2B64 : Not exact read/write.
+ 11109 : 0x2B65 : Operating system network error.
+ 11110 : 0x2B66 : Error from NOVELL file server.
+ 11111 : 0x2B67 : NOVELL server out of memory.
+ 11112 : 0x2B68 : Record already locked by this workstation.
+ 11113 : 0x2B69 : Record not locked.
+
+# Network Related 
+
+ 11265 : 0x2C01 : Network initialization failed.
+ 11266 : 0x2C02 : Network user limit exceeded.
+ 11267 : 0x2C03 : Wrong .NET file version.
+ 11268 : 0x2C04 : Cannot lock network file.
+ 11269 : 0x2C05 : Directory is not private.
+ 11270 : 0x2C06 : Directory is controlled by other .NET file.
+ 11271 : 0x2C07 : Unknown network error.
+ 11272 : 0x2C08 : Not initialized for accessing network files.
+ 11273 : 0x2C09 : SHARE not loaded. It is required to share local files.
+ 11274 : 0x2C0A : Not on a network. Not logged in or wrong network driver.
+ 11275 : 0x2C0B : Lost communication with SQL server.
+ 11277 : 0x2C0D : Cannot locate or connect to SQL server.
+ 11278 : 0x2C0E : Cannot locate or connect to network server.
+
+# Optional Parameter Related 
+
+ 11521 : 0x2D01 : Optional parameter is required.
+ 11522 : 0x2D02 : Invalid optional parameter.
+
+# Query Related 
+
+ 11777 : 0x2E01 : obsolete
+ 11778 : 0x2E02 : obsolete
+ 11779 : 0x2E03 : Ambiguous use of ! (inclusion operator).
+ 11780 : 0x2E04 : obsolete
+ 11781 : 0x2E05 : obsolete
+ 11782 : 0x2E06 : A SET operation cannot be included in its own grouping.
+ 11783 : 0x2E07 : Only numeric and date/time fields can be averaged.
+ 11784 : 0x2E08 : Invalid expression.
+ 11785 : 0x2E09 : Invalid OR expression.
+ 11786 : 0x2E0A : obsolete
+ 11787 : 0x2E0B : bitmap
+ 11788 : 0x2E0C : CALC expression cannot be used in INSERT, DELETE, CHANGETO and SET rows.
+ 11789 : 0x2E0D : Type error in CALC expression.
+ 11790 : 0x2E0E : CHANGETO can be used in only one query form at a time.
+ 11791 : 0x2E0F : Cannot modify CHANGED table.
+ 11792 : 0x2E10 : A field can contain only one CHANGETO expression.
+ 11793 : 0x2E11 : A field cannot contain more than one expression to be inserted.
+ 11794 : 0x2E12 : obsolete
+ 11795 : 0x2E13 : CHANGETO must be followed by the new value for the field.
+ 11796 : 0x2E14 : Checkmark or CALC expressions cannot be used in FIND queries.
+ 11797 : 0x2E15 : Cannot perform operation on CHANGED table together with a CHANGETO query.
+ 11798 : 0x2E16 : chunk
+ 11799 : 0x2E17 : More than 255 fields in ANSWER table.
+ 11800 : 0x2E18 : AS must be followed by the name for the field in the ANSWER table.
+ 11801 : 0x2E19 : DELETE can be used in only one query form at a time.
+ 11802 : 0x2E1A : Cannot perform operation on DELETED table together with a DELETE query.
+ 11803 : 0x2E1B : Cannot delete from the DELETED table.
+ 11804 : 0x2E1C : Example element is used in two fields with incompatible types or with a BLOB.
+ 11805 : 0x2E1D : Cannot use example elements in an OR expression.
+ 11806 : 0x2E1E : Expression in this field has the wrong type.
+ 11807 : 0x2E1F : Extra comma found.
+ 11808 : 0x2E20 : Extra OR found.
+ 11809 : 0x2E21 : One or more query rows do not contribute to the ANSWER.
+ 11810 : 0x2E22 : FIND can be used in only one query form at a time.
+ 11811 : 0x2E23 : FIND cannot be used with the ANSWER table.
+ 11812 : 0x2E24 : A row with GROUPBY must contain SET operations.
+ 11813 : 0x2E25 : GROUPBY can be used only in SET rows.
+ 11814 : 0x2E26 : Use only INSERT, DELETE, SET or FIND in leftmost column.
+ 11815 : 0x2E27 : Use only one INSERT, DELETE, SET or FIND per line.
+ 11816 : 0x2E28 : Syntax error in expression.
+ 11817 : 0x2E29 : INSERT can be used in only one query form at a time.
+ 11818 : 0x2E2A : Cannot perform operation on INSERTED table together with an INSERT query.
+ 11819 : 0x2E2B : INSERT, DELETE, CHANGETO and SET rows may not be checked.
+ 11820 : 0x2E2C : Field must contain an expression to insert (or be blank).
+ 11821 : 0x2E2D : Cannot insert into the INSERTED table.
+ 11822 : 0x2E2E : Variable is an array and cannot be accessed.
+ 11823 : 0x2E2F : Label
+ 11824 : 0x2E30 : Rows of example elements in CALC expression must be linked.
+ 11825 : 0x2E31 : Variable name is too long.
+ 11826 : 0x2E32 : Query may take a long time to process.
+ 11827 : 0x2E33 : Reserved word or one that can't be used as a variable name.
+ 11828 : 0x2E34 : Missing comma.
+ 11829 : 0x2E35 : Missing ).
+ 11830 : 0x2E36 : Missing right quote.
+ 11831 : 0x2E37 : Cannot specify duplicate column names.
+ 11832 : 0x2E38 : Query has no checked fields.
+ 11833 : 0x2E39 : Example element has no defining occurrence.
+ 11834 : 0x2E3A : No grouping is defined for SET operation.
+ 11835 : 0x2E3B : Query makes no sense.
+ 11836 : 0x2E3C : Cannot use patterns in this context.
+ 11837 : 0x2E3D : Date does not exist.
+ 11838 : 0x2E3E : Variable has not been assigned a value.
+ 11839 : 0x2E3F : Invalid use of example element in summary expression.
+ 11840 : 0x2E40 : Incomplete query statement. Query only contains a SET definition.
+ 11841 : 0x2E41 : Example element with ! makes no sense in expression.
+ 11842 : 0x2E42 : Example element cannot be used more than twice with a ! query.
+ 11843 : 0x2E43 : Row cannot contain expression.
+ 11844 : 0x2E44 : obsolete
+ 11845 : 0x2E45 : obsolete
+ 11846 : 0x2E46 : No permission to insert or delete records.
+ 11847 : 0x2E47 : No permission to modify field.
+ 11848 : 0x2E48 : Field not found in table.
+ 11849 : 0x2E49 : Expecting a column separator in table header.
+ 11850 : 0x2E4A : Expecting a column separator in table.
+ 11851 : 0x2E4B : Expecting column name in table.
+ 11852 : 0x2E4C : Expecting table name.
+ 11853 : 0x2E4D : Expecting consistent number of columns in all rows of table.
+ 11854 : 0x2E4E : Cannot open table.
+ 11855 : 0x2E4F : Field appears more than once in table.
+ 11856 : 0x2E50 : This DELETE, CHANGE or INSERT query has no ANSWER.
+ 11857 : 0x2E51 : Query is not prepared. Properties unknown.
+ 11858 : 0x2E52 : DELETE rows cannot contain quantifier expression.
+ 11859 : 0x2E53 : Invalid expression in INSERT row.
+ 11860 : 0x2E54 : Invalid expression in INSERT row.
+ 11861 : 0x2E55 : Invalid expression in SET definition.
+ 11862 : 0x2E56 : row use
+ 11863 : 0x2E57 : SET keyword expected.
+ 11864 : 0x2E58 : Ambiguous use of example element.
+ 11865 : 0x2E59 : obsolete
+ 11866 : 0x2E5A : obsolete
+ 11867 : 0x2E5B : Only numeric fields can be summed.
+ 11868 : 0x2E5C : Table is write protected.
+ 11869 : 0x2E5D : Token not found.
+ 11870 : 0x2E5E : Cannot use example element with ! more than once in a single row.
+ 11871 : 0x2E5F : Type mismatch in expression.
+ 11872 : 0x2E60 : Query appears to ask two unrelated questions.
+ 11873 : 0x2E61 : Unused SET row.
+ 11874 : 0x2E62 : INSERT, DELETE, FIND, and SET can be used only in the leftmost column.
+ 11875 : 0x2E63 : CHANGETO cannot be used with INSERT, DELETE, SET or FIND.
+ 11876 : 0x2E64 : Expression must be followed by an example element defined in a SET.
+ 11877 : 0x2E65 : Lock failure.
+ 11878 : 0x2E66 : Expression is too long.
+ 11879 : 0x2E67 : Refresh exception during query.
+ 11880 : 0x2E68 : Query canceled.
+ 11881 : 0x2E69 : Unexpected Database Engine error.
+ 11882 : 0x2E6A : Not enough memory to finish operation.
+ 11883 : 0x2E6B : Unexpected exception.
+ 11884 : 0x2E6C : Feature not implemented yet in query.
+ 11885 : 0x2E6D : Query format is not supported.
+ 11886 : 0x2E6E : Query string is empty.
+ 11887 : 0x2E6F : Attempted to prepare an empty query.
+ 11888 : 0x2E70 : Buffer too small to contain query string.
+ 11889 : 0x2E71 : Query was not previously parsed or prepared.
+ 11890 : 0x2E72 : Function called with bad query handle.
+ 11891 : 0x2E73 : QBE syntax error.
+ 11892 : 0x2E74 : Query extended syntax field count error.
+ 11893 : 0x2E75 : Field name in sort or field clause not found.
+ 11894 : 0x2E76 : Table name in sort or field clause not found.
+ 11895 : 0x2E77 : Operation is not supported on BLOB fields.
+ 11896 : 0x2E78 : General BLOB error.
+ 11897 : 0x2E79 : Query must be restarted.
+ 11898 : 0x2E7A : Unknown answer table type.
+ 11926 : 0x2E96 : Blob cannot be used as grouping field.
+ 11927 : 0x2E97 : Query properties have not been fetched.
+ 11928 : 0x2E98 : Answer table is of unsuitable type.
+ 11929 : 0x2E99 : Answer table is not yet supported under server alias.
+ 11930 : 0x2E9A : Non-null blob field required. Can't insert records
+ 11931 : 0x2E9B : Unique index required to perform changeto
+ 11932 : 0x2E9C : Unique index required to delete records
+ 11933 : 0x2E9D : Update of table on the server failed.
+ 11934 : 0x2E9E : Can't process this query remotely.
+ 11935 : 0x2E9F : Unexpected end of command.
+ 11936 : 0x2EA0 : Parameter not set in query string.
+ 11937 : 0x2EA1 : Query string is too long.
+ 11946 : 0x2EAA : No such table or correlation name.
+ 11947 : 0x2EAB : Expression has ambiguous data type.
+ 11948 : 0x2EAC : Field in order by must be in result set.
+ 11949 : 0x2EAD : General parsing error.
+ 11950 : 0x2EAE : Record or field constraint failed.
+ 11951 : 0x2EAF : When GROUP BY exists, every simple field in projectors must be in GROUP BY.
+ 11952 : 0x2EB0 : User defined function is not defined.
+ 11953 : 0x2EB1 : Unknown error from User defined function.
+ 11954 : 0x2EB2 : Single row subquery produced more than one row.
+ 11955 : 0x2EB3 : Expressions in group by are not supported.
+ 11956 : 0x2EB4 : Queries on text or ascii tables is not supported.
+ 11957 : 0x2EB5 : ANSI join keywords USING and NATURAL are not supported in this release.
+ 11958 : 0x2EB6 : SELECT DISTINCT may not be used with UNION unless UNION ALL is used.
+ 11959 : 0x2EB7 : GROUP BY is required when both aggregate and non-aggregate fields are used in result set.
+ 11960 : 0x2EB8 : INSERT and UPDATE operations are not supported on autoincrement field type.
+ 11961 : 0x2EB9 : UPDATE on Primary Key of a Master Table may modify more than one record.
+ 11962 : 0x2EBA : Queries on MS ACCESS tables are not supported by local query engines.
+ 11963 : 0x2EBB : Preparation of field-level constraint failed.
+ 11964 : 0x2EBC : Preparation of field default failed.
+ 11965 : 0x2EBD : Preparation of record-level constraint failed.
+ 11972 : 0x2EC4 : Constraint Failed.  Expression: 
+
+# Version Mismatch
+
+ 12033 : 0x2F01 : Interface mismatch. Engine version different.
+ 12034 : 0x2F02 : Index is out of date.
+ 12035 : 0x2F03 : Older version (see context).
+ 12036 : 0x2F04 : .VAL file is out of date.
+ 12037 : 0x2F05 : BLOB file version is too old.
+ 12038 : 0x2F06 : Query and Engine DLLs are mismatched.
+ 12039 : 0x2F07 : Server is incompatible version.
+ 12040 : 0x2F08 : Higher table level required
+
+# Capability Not Supported 
+
+ 12289 : 0x3001 : Capability not supported.
+ 12290 : 0x3002 : Not implemented yet.
+ 12291 : 0x3003 : SQL replicas not supported.
+ 12292 : 0x3004 : Non-blob column in table required to perform operation.
+ 12293 : 0x3005 : Multiple connections not supported.
+ 12294 : 0x3006 : Full dBASE expressions not supported.
+ 12295 : 0x3007 : Nested transactions not supported.
+
+# System Configuration Error 
+
+ 12545 : 0x3101 : Invalid database alias specification.
+ 12546 : 0x3102 : Unknown database type.
+ 12547 : 0x3103 : Corrupt system configuration file.
+ 12548 : 0x3104 : Network type unknown.
+ 12549 : 0x3105 : Not on the network.
+ 12550 : 0x3106 : Invalid configuration parameter.
+
+# Warnings
+
+ 12801 : 0x3201 : Object implicitly dropped.
+ 12802 : 0x3202 : Object may be truncated.
+ 12803 : 0x3203 : Object implicitly modified.
+ 12804 : 0x3204 : Should field constraints be checked?
+ 12805 : 0x3205 : Validity check field modified.
+ 12806 : 0x3206 : Table level changed.
+ 12807 : 0x3207 : Copy linked tables?
+ 12809 : 0x3209 : Object implicitly truncated.
+ 12810 : 0x320A : Validity check will not be enforced.
+ 12811 : 0x320B : Multiple records found, but only one was expected.
+ 12812 : 0x320C : Field will be trimmed, cannot put master records into PROBLEM table.
+
+# Miscellaneous
+
+ 13057 : 0x3301 : File already exists.
+ 13058 : 0x3302 : BLOB has been modified.
+ 13059 : 0x3303 : General SQL error.
+ 13060 : 0x3304 : Table already exists.
+ 13061 : 0x3305 : Paradox 1.0 tables are not supported.
+ 13062 : 0x3306 : Update aborted.
+
+# Compatibility related 
+
+ 13313 : 0x3401 : Different sort order.
+ 13314 : 0x3402 : Directory in use by earlier version of Paradox.
+ 13315 : 0x3403 : Needs Paradox 3.5-compatible language driver.
+
+# Data Repository related 
+
+ 13569 : 0x3501 : Data Dictionary is corrupt
+ 13570 : 0x3502 : Data Dictionary Info Blob corrupted
+ 13571 : 0x3503 : Data Dictionary Schema is corrupt
+ 13572 : 0x3504 : Attribute Type exists
+ 13573 : 0x3505 : Invalid Object Type
+ 13574 : 0x3506 : Invalid Relation Type
+ 13575 : 0x3507 : View already exists
+ 13576 : 0x3508 : No such View exists
+ 13577 : 0x3509 : Invalid Record Constraint
+ 13578 : 0x350A : Object is in a Logical DB
+ 13579 : 0x350B : Dictionary already exists
+ 13580 : 0x350C : Dictionary does not exist
+ 13581 : 0x350D : Dictionary database does not exist
+ 13582 : 0x350E : Dictionary info is out of date - needs Refresh
+ 13584 : 0x3510 : Invalid Dictionary Name
+ 13585 : 0x3511 : Dependent Objects exist
+ 13586 : 0x3512 : Too many Relationships for this Object Type
+ 13587 : 0x3513 : Relationships to the Object exist
+ 13588 : 0x3514 : Dictionary Exchange File is corrupt
+ 13589 : 0x3515 : Dictionary Exchange File Version mismatch
+ 13590 : 0x3516 : Dictionary Object Type Mismatch
+ 13591 : 0x3517 : Object exists in Target Dictionary
+ 13592 : 0x3518 : Cannot access Data Dictionary
+ 13593 : 0x3519 : Cannot create Data Dictionary
+ 13594 : 0x351A : Cannot open Database
+
+# Driver related 
+
+ 15873 : 0x3E01 : Wrong driver name.
+ 15874 : 0x3E02 : Wrong system version.
+ 15875 : 0x3E03 : Wrong driver version.
+ 15876 : 0x3E04 : Wrong driver type.
+ 15877 : 0x3E05 : Cannot load driver.
+ 15878 : 0x3E06 : Cannot load language driver.
+ 15879 : 0x3E07 : Vendor initialization failed.
+ 15880 : 0x3E08 : Your application is not enabled for use with this driver.
